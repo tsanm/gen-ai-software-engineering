@@ -18,7 +18,14 @@ Build a customer support ticket management system that imports tickets from mult
 
 **Tools:** Use AI coding tools
 
-**Tech Stack:** Choose one - Node.js/Express, Python/Flask/FastAPI, or Java/Spring Boot
+**Tech Stack:** Python 3.11+ with FastAPI framework
+- **Language:** Python 3.11+
+- **Web Framework:** FastAPI
+- **Database:** SQLite (via SQLAlchemy ORM)
+- **Testing:** pytest + pytest-cov
+- **Data Parsing:** pandas (CSV), built-in json (JSON), lxml or xml.etree.ElementTree (XML)
+- **Validation:** Pydantic v2 (built into FastAPI)
+- **Dependencies managed via:** `requirements.txt`
 
 ---
 

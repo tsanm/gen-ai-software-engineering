@@ -1,4 +1,4 @@
-# 🏦 Homework 1: Banking Transactions API
+# 🎧 Homework 2: Intelligent Customer Support System
 
 > **Student Name**: [Your Name]
 > **Date Submitted**: [Date]
