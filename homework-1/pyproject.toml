@@ -1,0 +1,19 @@
+[project]
+name = "banking-transactions-api"
+version = "1.0.0"
+description = "Homework 1 - Banking Transactions API (FastAPI, in-memory)"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = [".", "tests"]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# B008: Depends()/Query() in argument defaults is the idiomatic FastAPI pattern.
+ignore = ["B008"]
