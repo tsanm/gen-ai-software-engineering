@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from enum import Enum
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, field_serializer, field_validator
 
 
 class TxType(str, Enum):
@@ -29,6 +29,14 @@ class TransactionCreate(BaseModel):
     amount: Decimal
     currency: str
     type: TxType
+
+    @field_validator("fromAccount", "toAccount", mode="before")
+    @classmethod
+    def _blank_to_none(cls, value):
+        """Treat blank/whitespace-only account strings as absent (None)."""
+        if isinstance(value, str) and value.strip() == "":
+            return None
+        return value
 
 
 class Transaction(BaseModel):

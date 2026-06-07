@@ -51,27 +51,20 @@ def validate_transaction(payload: TransactionCreate, region: Region) -> list[dic
 
 
 def _validate_accounts(payload: TransactionCreate, region: Region) -> list[dict]:
+    """Validate the account fields per transaction type.
+
+    Rules: each type must carry its *essential* account, a transfer's two accounts must
+    differ, and any account that IS provided must match the region format. Presence of an
+    extra account is allowed (the spec models both fields as strings for every type).
+    """
     details: list[dict] = []
     frm, to = payload.fromAccount, payload.toAccount
 
-    def check_format(field: str, value: str | None) -> None:
-        if value is not None and not region.is_valid_account(value):
-            details.append(_detail(field, ACCOUNT_FORMAT_MSG))
+    if payload.type == TxType.deposit and not to:
+        details.append(_detail("toAccount", "Deposit requires a destination account"))
 
-    if payload.type == TxType.deposit:
-        if not to:
-            details.append(_detail("toAccount", "Deposit requires a destination account"))
-        if frm:
-            details.append(_detail("fromAccount", "Deposit must not specify a source account"))
-        check_format("toAccount", to)
-
-    elif payload.type == TxType.withdrawal:
-        if not frm:
-            details.append(_detail("fromAccount", "Withdrawal requires a source account"))
-        if to:
-            details.append(_detail(
-                "toAccount", "Withdrawal must not specify a destination account"))
-        check_format("fromAccount", frm)
+    elif payload.type == TxType.withdrawal and not frm:
+        details.append(_detail("fromAccount", "Withdrawal requires a source account"))
 
     elif payload.type == TxType.transfer:
         if not frm:
@@ -80,7 +73,11 @@ def _validate_accounts(payload: TransactionCreate, region: Region) -> list[dict]
             details.append(_detail("toAccount", "Transfer requires a destination account"))
         if frm and to and frm == to:
             details.append(_detail("toAccount", "Transfer source and destination must differ"))
-        check_format("fromAccount", frm)
-        check_format("toAccount", to)
+
+    # Format is validated for whichever accounts are present, regardless of type.
+    if frm is not None and not region.is_valid_account(frm):
+        details.append(_detail("fromAccount", ACCOUNT_FORMAT_MSG))
+    if to is not None and not region.is_valid_account(to):
+        details.append(_detail("toAccount", ACCOUNT_FORMAT_MSG))
 
     return details

@@ -37,6 +37,7 @@ def test_internal_error_is_safe(make_client, monkeypatch):
     assert "error" in body
     assert "secret internal detail" not in r.text
     assert "Traceback" not in r.text
+    assert r.headers.get("X-Request-ID")  # request-id present even on 500s
 
 
 def test_request_id_header_present(client):

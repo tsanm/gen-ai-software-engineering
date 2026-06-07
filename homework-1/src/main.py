@@ -120,9 +120,12 @@ def _register_exception_handlers(app: FastAPI) -> None:
     async def handle_unexpected(request: Request, exc: Exception):
         rid = getattr(request.state, "request_id", None)
         logger.exception("unhandled error rid=%s", rid)  # full detail to logs only
-        return JSONResponse(
+        resp = JSONResponse(
             status_code=500,
             content=error_body("Internal server error", rid))
+        if rid:
+            resp.headers["X-Request-ID"] = rid
+        return resp
 
 
 def _field_from_loc(loc) -> str | None:

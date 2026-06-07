@@ -3,7 +3,7 @@
 All validation failures must return HTTP 400 with the documented shape:
     {"error": "Validation failed", "details": [{"field": ..., "message": ...}]}
 """
-from conftest import transfer
+from conftest import deposit, transfer
 
 
 def _details(resp):
@@ -56,17 +56,38 @@ def test_multiple_validation_errors_aggregated(client):
 
 
 def test_per_type_field_rules(client):
-    """#10 deposit must not carry fromAccount; transfer needs distinct accounts."""
-    bad_deposit = {"fromAccount": "ACC-12345", "toAccount": "ACC-67890",
-                   "amount": 10, "currency": "USD", "type": "deposit"}
-    assert client.post("/transactions", json=bad_deposit).status_code == 400
-
-    same_acct = transfer(fromAccount="ACC-12345", toAccount="ACC-12345")
-    assert client.post("/transactions", json=same_acct).status_code == 400
-
-    # withdrawal without a source account is invalid
+    """#10 Each type needs its essential account; transfer accounts must differ; any
+    provided account must be well-formed. Presence of an extra account is allowed
+    (the spec models both fields as strings for every type)."""
+    # deposit requires a destination account
+    no_dest = {"amount": 10, "currency": "USD", "type": "deposit"}
+    assert client.post("/transactions", json=no_dest).status_code == 400
+    # withdrawal requires a source account
     no_source = {"amount": 10, "currency": "USD", "type": "withdrawal"}
     assert client.post("/transactions", json=no_source).status_code == 400
+    # transfer source and destination must differ
+    same_acct = transfer(fromAccount="ACC-12345", toAccount="ACC-12345")
+    assert client.post("/transactions", json=same_acct).status_code == 400
+    # a provided account must match the format, regardless of type
+    assert client.post("/transactions", json=deposit(toAccount="bad")).status_code == 400
+
+    # a deposit that also carries a (valid) fromAccount is accepted - spec allows it
+    ok = {"fromAccount": "ACC-12345", "toAccount": "ACC-67890",
+          "amount": 10, "currency": "USD", "type": "deposit"}
+    assert client.post("/transactions", json=ok).status_code == 201
+
+
+def test_blank_account_treated_as_absent(client):
+    """Regression: empty/whitespace account strings normalize to absent, not stored as ''."""
+    # blank fromAccount on a deposit is ignored -> accepted
+    body = {"fromAccount": "  ", "toAccount": "ACC-12345",
+            "amount": 10, "currency": "USD", "type": "deposit"}
+    created = client.post("/transactions", json=body)
+    assert created.status_code == 201
+    assert created.json()["fromAccount"] is None
+    # blank source on a transfer counts as missing -> rejected
+    bad = transfer(fromAccount="")
+    assert client.post("/transactions", json=bad).status_code == 400
 
 
 def test_garbage_type_still_returns_400_shape(client):
