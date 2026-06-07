@@ -9,8 +9,8 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Query, Response
 
-from src.models import Transaction, TransactionCreate, TxType
 from src.errors import ApiError
+from src.models import Transaction, TransactionCreate, TxType
 from src.routes.dependencies import get_transaction_service
 from src.services import TransactionService
 

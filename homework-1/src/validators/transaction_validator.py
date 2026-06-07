@@ -24,38 +24,42 @@ def _detail(field: str, message: str) -> dict:
 
 
 def validate_transaction(payload: TransactionCreate, region: Region) -> list[dict]:
-    details: list[dict] = []
+    """Collect every problem so the response can report them all at once."""
+    return [
+        *_amount_errors(payload),
+        *_currency_errors(payload, region),
+        *_validate_accounts(payload, region),
+    ]
 
-    # --- amount ---
-    # NaN/Infinity are rejected upstream by Pydantic, so `amount` is always finite here.
+
+def _amount_errors(payload: TransactionCreate) -> list[dict]:
+    """Positivity, an upper bound, and currency-aware decimal precision.
+
+    NaN/Infinity are rejected upstream by Pydantic, so `amount` is always finite here.
+    """
     amount: Decimal = payload.amount
     if amount is None or amount <= 0:
-        details.append(_detail("amount", "Amount must be a positive number"))
-    elif amount > MAX_AMOUNT:
-        details.append(_detail("amount", f"Amount exceeds the maximum allowed value of {MAX_AMOUNT}"))
+        return [_detail("amount", "Amount must be a positive number")]
+    if amount > MAX_AMOUNT:
+        return [_detail("amount", f"Amount exceeds the maximum allowed value of {MAX_AMOUNT}")]
+    if currencies.is_valid_currency(payload.currency) \
+            and not currencies.has_valid_precision(payload.currency, amount):
+        allowed = currencies.minor_units(payload.currency)
+        return [_detail(
+            "amount",
+            f"Amount exceeds the maximum {allowed} decimal place(s) for {payload.currency}")]
+    return []
 
-    # --- currency (validate before precision, which depends on it) ---
-    currency_ok = currencies.is_valid_currency(payload.currency)
-    if not currency_ok:
-        details.append(_detail("currency", "Invalid currency code"))
-    elif (region.allowed_currencies
-          and payload.currency.upper() not in region.allowed_currencies):
-        details.append(_detail(
+
+def _currency_errors(payload: TransactionCreate, region: Region) -> list[dict]:
+    """Valid ISO 4217 code, and (if the region restricts them) an allowed currency."""
+    if not currencies.is_valid_currency(payload.currency):
+        return [_detail("currency", "Invalid currency code")]
+    if region.allowed_currencies and payload.currency.upper() not in region.allowed_currencies:
+        return [_detail(
             "currency",
-            f"Currency {payload.currency} is not supported in region {region.code}"))
-
-    # --- amount precision (currency-aware) ---
-    if amount is not None and amount > 0 and currency_ok:
-        if not currencies.has_valid_precision(payload.currency, amount):
-            allowed = currencies.minor_units(payload.currency)
-            details.append(_detail(
-                "amount",
-                f"Amount exceeds the maximum {allowed} decimal place(s) for {payload.currency}"))
-
-    # --- per-type account rules ---
-    details.extend(_validate_accounts(payload, region))
-
-    return details
+            f"Currency {payload.currency} is not supported in region {region.code}")]
+    return []
 
 
 def _validate_accounts(payload: TransactionCreate, region: Region) -> list[dict]:

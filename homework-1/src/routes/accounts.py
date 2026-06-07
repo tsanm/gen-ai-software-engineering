@@ -8,8 +8,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 
 from src.models import AccountSummaryView, BalanceView, InterestView
-from src.services import AccountService
 from src.routes.dependencies import get_account_service
+from src.services import AccountService
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
