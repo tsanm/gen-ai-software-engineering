@@ -13,6 +13,7 @@ import uuid
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from src.compliance import AuditLog, CompliancePolicy
 from src.config import Settings
@@ -112,6 +113,17 @@ def _register_exception_handlers(app: FastAPI) -> None:
         resp = JSONResponse(
             status_code=400,
             content=error_body("Validation failed", rid, details))
+        if rid:
+            resp.headers["X-Request-ID"] = rid
+        return resp
+
+    @app.exception_handler(StarletteHTTPException)
+    async def handle_http_exception(request: Request, exc: StarletteHTTPException):
+        # Unknown route (404) / wrong method (405) -> same envelope as everything else.
+        rid = getattr(request.state, "request_id", None)
+        resp = JSONResponse(
+            status_code=exc.status_code,
+            content=error_body(str(exc.detail), rid))
         if rid:
             resp.headers["X-Request-ID"] = rid
         return resp

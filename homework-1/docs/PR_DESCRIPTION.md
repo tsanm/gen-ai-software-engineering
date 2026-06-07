@@ -8,7 +8,7 @@
 
 ## Summary
 
-In-memory banking transactions API, built TDD with Claude Code. **Tasks 1–3 + all four Task-4 features** (only one required). **28 tests pass, ruff clean.**
+In-memory banking transactions API, built TDD with Claude Code. **Tasks 1–3 + all four Task-4 features** (only one required). **53 tests pass · 99% coverage · static-analysis gate clean.**
 
 ## Scope
 
@@ -18,13 +18,15 @@ In-memory banking transactions API, built TDD with Claude Code. **Tasks 1–3 + 
 | Task 2 — Validation | amount · currency-aware decimals · `ACC-XXXXX` · ISO-4217 · per-type rules → `{error, details[]}` |
 | Task 3 — Filtering | `accountId` · `type` · date range · combinable |
 | Task 4 — Extras | **A** summary · **B** interest · **C** CSV export · **D** rate-limit `429` |
-| Beyond spec | one error envelope · safe 500s · `X-Request-ID` + logging · `/health` + `/docs` · `Decimal` money · multi-region seam · audit trail + PII masking |
+| Beyond spec | one error envelope (incl. unknown route / 405) · safe 500s · `X-Request-ID` + logging · `/health` + `/docs` · `Decimal` money · multi-region seam · audit trail + PII masking |
+| Quality gate | ruff · mypy · bandit · radon (avg A) · 99% coverage — `./demo/quality.sh`; `sonar-project.properties` for SonarQube |
 
 ## Verify
 
 ```bash
-cd homework-1 && ./demo/run.sh   # http://localhost:3000  (docs at /docs)
-pytest                           # 28 passed
+cd homework-1 && ./demo/run.sh    # http://localhost:3000  (docs at /docs)
+pytest                            # 53 passed
+./demo/quality.sh                 # ruff + mypy + bandit + radon + coverage (99%)
 ```
 
 Details: [README](../README.md) · [HOWTORUN](../HOWTORUN.md) · requests in [`demo/sample-requests.http`](../demo/sample-requests.http).

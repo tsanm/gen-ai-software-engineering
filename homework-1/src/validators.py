@@ -57,27 +57,30 @@ def _validate_accounts(payload: TransactionCreate, region: Region) -> list[dict]
     differ, and any account that IS provided must match the region format. Presence of an
     extra account is allowed (the spec models both fields as strings for every type).
     """
-    details: list[dict] = []
     frm, to = payload.fromAccount, payload.toAccount
-
-    if payload.type == TxType.deposit and not to:
-        details.append(_detail("toAccount", "Deposit requires a destination account"))
-
-    elif payload.type == TxType.withdrawal and not frm:
-        details.append(_detail("fromAccount", "Withdrawal requires a source account"))
-
-    elif payload.type == TxType.transfer:
-        if not frm:
-            details.append(_detail("fromAccount", "Transfer requires a source account"))
-        if not to:
-            details.append(_detail("toAccount", "Transfer requires a destination account"))
-        if frm and to and frm == to:
-            details.append(_detail("toAccount", "Transfer source and destination must differ"))
+    details = _required_account_errors(payload.type, frm, to)
 
     # Format is validated for whichever accounts are present, regardless of type.
-    if frm is not None and not region.is_valid_account(frm):
-        details.append(_detail("fromAccount", ACCOUNT_FORMAT_MSG))
-    if to is not None and not region.is_valid_account(to):
-        details.append(_detail("toAccount", ACCOUNT_FORMAT_MSG))
+    for field, value in (("fromAccount", frm), ("toAccount", to)):
+        if value is not None and not region.is_valid_account(value):
+            details.append(_detail(field, ACCOUNT_FORMAT_MSG))
 
     return details
+
+
+def _required_account_errors(tx_type: TxType, frm: str | None, to: str | None) -> list[dict]:
+    """Per-type presence rules for the essential account(s)."""
+    if tx_type == TxType.deposit:
+        return [] if to else [_detail("toAccount", "Deposit requires a destination account")]
+    if tx_type == TxType.withdrawal:
+        return [] if frm else [_detail("fromAccount", "Withdrawal requires a source account")]
+
+    # transfer: both required and distinct
+    errors: list[dict] = []
+    if not frm:
+        errors.append(_detail("fromAccount", "Transfer requires a source account"))
+    if not to:
+        errors.append(_detail("toAccount", "Transfer requires a destination account"))
+    if frm and to and frm == to:
+        errors.append(_detail("toAccount", "Transfer source and destination must differ"))
+    return errors

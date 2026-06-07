@@ -25,16 +25,16 @@ def filter_transactions(
     date_to: date | None = None,
 ) -> list[Transaction]:
     """Apply Task 3 filters with AND semantics. accountId matches sender OR receiver."""
-    result = txns
+    predicates = []
     if account_id:
-        result = [t for t in result if _involves(t, account_id)]
+        predicates.append(lambda t: _involves(t, account_id))
     if tx_type:
-        result = [t for t in result if t.type == tx_type]
+        predicates.append(lambda t: t.type == tx_type)
     if date_from:
-        result = [t for t in result if t.timestamp.date() >= date_from]
+        predicates.append(lambda t: t.timestamp.date() >= date_from)
     if date_to:
-        result = [t for t in result if t.timestamp.date() <= date_to]
-    return result
+        predicates.append(lambda t: t.timestamp.date() <= date_to)
+    return [t for t in txns if all(p(t) for p in predicates)]
 
 
 def compute_balance(txns: list[Transaction], account_id: str) -> Decimal:
@@ -55,17 +55,23 @@ def compute_balance(txns: list[Transaction], account_id: str) -> Decimal:
     return balance
 
 
+def _is_deposit_to(account_id: str):
+    return lambda t: t.type == TxType.deposit and t.toAccount == account_id
+
+
+def _is_withdrawal_from(account_id: str):
+    return lambda t: t.type == TxType.withdrawal and t.fromAccount == account_id
+
+
+def _sum_amounts(txns, predicate) -> Decimal:
+    return sum((t.amount for t in txns if predicate(t)), Decimal("0"))
+
+
 def account_summary(txns: list[Transaction], account_id: str) -> dict:
     """Task 4-A: totals, count, and most-recent date for an account."""
     involved = [t for t in txns if _involves(t, account_id)]
-    total_deposits = sum(
-        (t.amount for t in involved
-         if t.type == TxType.deposit and t.toAccount == account_id),
-        Decimal("0"))
-    total_withdrawals = sum(
-        (t.amount for t in involved
-         if t.type == TxType.withdrawal and t.fromAccount == account_id),
-        Decimal("0"))
+    total_deposits = _sum_amounts(involved, _is_deposit_to(account_id))
+    total_withdrawals = _sum_amounts(involved, _is_withdrawal_from(account_id))
     most_recent: datetime | None = max((t.timestamp for t in involved), default=None)
     return {
         "accountId": account_id,

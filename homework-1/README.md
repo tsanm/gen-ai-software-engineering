@@ -49,9 +49,23 @@ A `Region` (see `regions.py`) bundles currency rules, account format, allowed cu
 
 ---
 
+## Code quality
+
+Local static-analysis gate (the **SonarQube-equivalent** for Python) — one command: `./demo/quality.sh`.
+
+| Tool | Checks | Status |
+|------|--------|--------|
+| ruff | lint, bugs, import order | ✅ clean |
+| mypy | static type checking | ✅ no issues |
+| bandit | security analysis | ✅ no issues |
+| radon | cyclomatic complexity | ✅ avg **A**, no block above B |
+| coverage | test coverage | ✅ **99%** (gate ≥95%) |
+
+`sonar-project.properties` is included for SonarQube/SonarCloud if a server is available.
+
 ## Testing
 
-28 tests, **API-level / domain-flow** (no brittle unit tests). Each spec requirement maps to a test:
+53 tests, **API-level / domain-flow** (no brittle unit tests). Each spec requirement maps to a test:
 
 | Requirement | Tests |
 |-------------|-------|
