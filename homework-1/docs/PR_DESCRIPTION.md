@@ -29,7 +29,7 @@ pytest                            # 53 passed
 ./demo/quality.sh                 # ruff + mypy + bandit + radon + coverage (99%)
 ```
 
-Details: [README](../README.md) · [HOWTORUN](../HOWTORUN.md) · requests in [`demo/sample-requests.http`](../demo/sample-requests.http).
+Details: [README](../README.md) · [HOWTORUN](../HOWTORUN.md) · **[live request→response examples](./API_EXAMPLES.md)** · requests in [`demo/sample-requests.http`](../demo/sample-requests.http).
 
 ## Notes for reviewer
 

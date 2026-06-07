@@ -4,7 +4,7 @@
 
 In-memory REST API for banking transactions. **Tasks 1–3 done + all four Task-4 features.** 28 tests pass, ruff clean.
 
-▶️ Run & test: [HOWTORUN.md](./HOWTORUN.md) · 📖 API docs: `/docs` (Swagger)
+▶️ Run & test: [HOWTORUN.md](./HOWTORUN.md) · 📖 API docs: `/docs` (Swagger) · 📡 [live examples](./docs/API_EXAMPLES.md)
 
 ---
 
