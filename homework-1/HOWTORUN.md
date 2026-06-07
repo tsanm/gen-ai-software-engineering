@@ -67,11 +67,11 @@ RATE_LIMIT_MAX=5 REGION=JP uvicorn src.main:app --port 3000
 ```bash
 cd homework-1
 source .venv/bin/activate     # if not already active
-pytest                        # 28 tests
+pytest                        # 63 tests
 pytest -v                     # verbose, per-test names
 ```
 
-Expected: **28 passed**.
+Expected: **63 passed**.
 
 ---
 

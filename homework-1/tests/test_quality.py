@@ -24,13 +24,13 @@ def test_consistent_error_envelope_for_404_and_429(make_client):
 
 def test_internal_error_is_safe(make_client, monkeypatch):
     """#21 An unexpected failure -> generic 500 body, no traceback leaked."""
-    import src.services as services
+    import src.services.calculations as calculations
     client = make_client()
 
     def boom(*a, **k):
         raise RuntimeError("secret internal detail")
 
-    monkeypatch.setattr(services, "filter_transactions", boom)
+    monkeypatch.setattr(calculations, "filter_transactions", boom)
     r = client.get("/transactions")
     assert r.status_code == 500
     body = r.json()

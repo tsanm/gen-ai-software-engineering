@@ -1,4 +1,4 @@
-"""Domain models and API schemas (Pydantic v2)."""
+"""Transaction domain entity and the inbound create payload (Pydantic v2)."""
 from __future__ import annotations
 
 from datetime import datetime

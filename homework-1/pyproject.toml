@@ -30,7 +30,7 @@ exclude_dirs = ["tests", ".venv"]
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["src/__init__.py", "src/routers/__init__.py"]
+omit = ["src/__init__.py", "src/*/__init__.py"]
 
 [tool.coverage.report]
 show_missing = true

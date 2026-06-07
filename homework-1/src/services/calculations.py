@@ -1,7 +1,7 @@
-"""Core domain logic: filtering, balance, summary, interest, CSV export.
+"""Pure domain calculations: filtering, balance, summary, interest, CSV export.
 
-Pure functions over lists of `Transaction` -- no framework or storage coupling, which
-keeps them trivially testable and reusable.
+Pure functions over lists of `Transaction` -- no framework, storage, or transport
+coupling, which keeps them trivially testable and reusable by the application services.
 """
 from __future__ import annotations
 
@@ -68,17 +68,21 @@ def _sum_amounts(txns, predicate) -> Decimal:
 
 
 def account_summary(txns: list[Transaction], account_id: str) -> dict:
-    """Task 4-A: totals, count, and most-recent date for an account."""
+    """Task 4-A: totals, count, and most-recent date for an account.
+
+    Returns raw domain values (Decimal totals, `datetime`); JSON shaping is the view
+    model's job, not the domain's.
+    """
     involved = [t for t in txns if _involves(t, account_id)]
     total_deposits = _sum_amounts(involved, _is_deposit_to(account_id))
     total_withdrawals = _sum_amounts(involved, _is_withdrawal_from(account_id))
     most_recent: datetime | None = max((t.timestamp for t in involved), default=None)
     return {
         "accountId": account_id,
-        "totalDeposits": float(total_deposits),
-        "totalWithdrawals": float(total_withdrawals),
+        "totalDeposits": total_deposits,
+        "totalWithdrawals": total_withdrawals,
         "transactionCount": len(involved),
-        "mostRecentTransactionDate": most_recent.isoformat() if most_recent else None,
+        "mostRecentTransactionDate": most_recent,
     }
 
 

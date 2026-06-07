@@ -8,7 +8,7 @@
 
 ## Summary
 
-In-memory banking transactions API, built TDD with Claude Code. **Tasks 1–3 + all four Task-4 features** (only one required). **53 tests pass · 99% coverage · static-analysis gate clean.**
+In-memory banking transactions API, built TDD with Claude Code. **Tasks 1–3 + all four Task-4 features** (only one required). **63 tests pass.** Run the full quality gate (ruff · mypy · bandit · radon · coverage) with `./demo/quality.sh`.
 
 ## Scope
 
@@ -19,14 +19,14 @@ In-memory banking transactions API, built TDD with Claude Code. **Tasks 1–3 + 
 | Task 3 — Filtering | `accountId` · `type` · date range · combinable |
 | Task 4 — Extras | **A** summary · **B** interest · **C** CSV export · **D** rate-limit `429` |
 | Beyond spec | one error envelope (incl. unknown route / 405) · safe 500s · `X-Request-ID` + logging · `/health` + `/docs` · `Decimal` money · multi-region seam · audit trail + PII masking |
-| Quality gate | ruff · mypy · bandit · radon (avg A) · 99% coverage — `./demo/quality.sh`; `sonar-project.properties` for SonarQube |
+| Quality gate | ruff · mypy · bandit · radon · coverage (95% floor) — `./demo/quality.sh`; `sonar-project.properties` for SonarQube |
 
 ## Verify
 
 ```bash
 cd homework-1 && ./demo/run.sh    # http://localhost:3000  (docs at /docs)
-pytest                            # 53 passed
-./demo/quality.sh                 # ruff + mypy + bandit + radon + coverage (99%)
+pytest                            # 63 passed
+./demo/quality.sh                 # ruff + mypy + bandit + radon + coverage (95% floor)
 ```
 
 Details: [README](../README.md) · [HOWTORUN](../HOWTORUN.md) · **[live request→response examples](./API_EXAMPLES.md)** · requests in [`demo/sample-requests.http`](../demo/sample-requests.http).
@@ -34,7 +34,7 @@ Details: [README](../README.md) · [HOWTORUN](../HOWTORUN.md) · **[live request
 ## Notes for reviewer
 
 - **One intentional deviation:** decimal precision is **currency-aware** (USD/EUR/GBP=2, JPY=0, BHD=3) rather than a hardcoded "max 2" — spec currencies still behave as ≤2.
-- Architecture is layered (routers → validators/services → store); requirement→test traceability is in the README.
+- Architecture is layered (routes → services → models/store), with all business + domain logic in `services/` and input validation in `validators/`; requirement→test traceability is in the README.
 
 ## AI tools
 
@@ -42,4 +42,4 @@ Claude Code: read docs → surfaced spec ambiguities → agreed design → TDD �
 
 ## Screenshots
 <!-- embed after adding to docs/screenshots/ -->
-- [ ] Claude Code interaction · [ ] API running · [ ] sample request/response · [ ] `pytest` (28 passed)
+- [ ] Claude Code interaction · [ ] API running · [ ] sample request/response · [ ] `pytest` (63 passed)

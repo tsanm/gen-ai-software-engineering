@@ -1,26 +1,14 @@
-"""Compliance primitives: audit trail, PII masking, and a pluggable policy hook.
+"""Compliance: audit trail and a pluggable policy hook (a business concern).
 
-These are deliberately lightweight (in-memory) but model the seams a real bank needs:
-an immutable audit log, redaction of account PII before anything is logged/persisted,
-and a per-region policy that can flag transactions (e.g. AML/CTR large-amount reporting).
+Deliberately lightweight (in-memory) but models the seams a real bank needs: an immutable
+audit log and a per-region policy that can flag transactions (e.g. AML/CTR large-amount
+reporting). PII redaction itself is a generic helper -- see `utils.masking`.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import Decimal
-
-
-def mask_account(account: str | None) -> str | None:
-    """Redact an account identifier for logs/audit, keeping just enough to correlate.
-
-    `ACC-12345` -> `ACC-1****`. Returns None unchanged.
-    """
-    if not account:
-        return account
-    if len(account) <= 5:
-        return account[0] + "*" * (len(account) - 1)
-    return account[:5] + "*" * (len(account) - 5)
 
 
 class AuditLog:

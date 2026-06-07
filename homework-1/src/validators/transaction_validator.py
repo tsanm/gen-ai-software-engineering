@@ -7,11 +7,16 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from src import currencies
 from src.models import TransactionCreate, TxType
-from src.regions import Region
+from src.services import currencies
+from src.services.regions import Region
 
 ACCOUNT_FORMAT_MSG = "Account must match format ACC-XXXXX (5 alphanumeric characters)"
+
+# Upper bound on a single transaction amount. Besides being a sane banking control, this
+# keeps values well within the Decimal context precision so `currencies.quantize` can
+# never raise InvalidOperation on an absurd magnitude (which would surface as a 500).
+MAX_AMOUNT = Decimal("1_000_000_000_000")  # 1 trillion
 
 
 def _detail(field: str, message: str) -> dict:
@@ -22,9 +27,12 @@ def validate_transaction(payload: TransactionCreate, region: Region) -> list[dic
     details: list[dict] = []
 
     # --- amount ---
+    # NaN/Infinity are rejected upstream by Pydantic, so `amount` is always finite here.
     amount: Decimal = payload.amount
     if amount is None or amount <= 0:
         details.append(_detail("amount", "Amount must be a positive number"))
+    elif amount > MAX_AMOUNT:
+        details.append(_detail("amount", f"Amount exceeds the maximum allowed value of {MAX_AMOUNT}"))
 
     # --- currency (validate before precision, which depends on it) ---
     currency_ok = currencies.is_valid_currency(payload.currency)

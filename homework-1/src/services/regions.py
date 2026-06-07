@@ -1,4 +1,4 @@
-"""Region registry -- the single extension point for multi-country support.
+"""Region registry -- the single extension point for multi-country support (domain logic).
 
 A `Region` bundles the things that differ by jurisdiction: default currency, the set of
 allowed currencies, and the account-number format. Onboarding a new country = adding one

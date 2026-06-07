@@ -2,7 +2,7 @@
 
 **Author:** Anton Tsiatsko · **Stack:** Python · FastAPI · Pydantic v2 · pytest · **AI:** Claude Code
 
-In-memory REST API for banking transactions. **Tasks 1–3 done + all four Task-4 features.** 28 tests pass, ruff clean.
+In-memory REST API for banking transactions. **Tasks 1–3 done + all four Task-4 features.** 63 tests pass.
 
 ▶️ Run & test: [HOWTORUN.md](./HOWTORUN.md) · 📖 API docs: `/docs` (Swagger) · 📡 [live examples](./docs/API_EXAMPLES.md)
 
@@ -23,11 +23,26 @@ In-memory REST API for banking transactions. **Tasks 1–3 done + all four Task-
 
 ## Architecture
 
-Layered: **routers** (thin) → **validators / services** (pure logic) → **store**. Cross-cutting concerns (request-id, rate limit, logging, errors) wired in the `create_app` factory.
+Layered, dependencies pointing inward:
+**routes** (thin HTTP adapters) → **services** (all business + domain logic: use-cases,
+pure calculations, compliance, currency/region rules) → **models** (the data layer:
+entities, response DTOs, and the store). Input checks live in **validators**; generic,
+business-agnostic helpers in **utils**. Everything below `routes` is transport-agnostic,
+so the same use-case could be driven by a queue consumer or CLI and return the same view
+model.
 
 ```
-src/  main.py · config.py · models.py · store.py · validators.py · services.py
-      currencies.py · regions.py · compliance.py · rate_limit.py · deps.py · routers/
+src/
+  main.py            app factory + middleware / exception handlers
+  config.py          immutable settings (env-driven)
+  errors.py          one error envelope for 400/404/429/500
+  routes/            accounts.py · transactions.py · dependencies.py   (thin adapters + DI)
+  services/          account_service.py · transaction_service.py       (use-cases)
+                     calculations.py (balance/interest/filter/csv)
+                     compliance.py · currencies.py · regions.py        (domain rules)
+  models/            transaction.py (entity + create) · views.py (DTOs) · store.py
+  validators/        transaction_validator.py · account_validator.py
+  utils/             masking.py · rate_limit.py                        (generic helpers)
 ```
 
 ### Key decisions
@@ -65,7 +80,7 @@ Local static-analysis gate (the **SonarQube-equivalent** for Python) — one com
 
 ## Testing
 
-53 tests, **API-level / domain-flow** (no brittle unit tests). Each spec requirement maps to a test:
+63 tests, **API-level / domain-flow** (no brittle unit tests). Each spec requirement maps to a test:
 
 | Requirement | Tests |
 |-------------|-------|

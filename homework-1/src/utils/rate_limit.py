@@ -1,7 +1,7 @@
-"""Fixed-window, in-memory rate limiter (Task 4-D).
+"""Sliding-window, in-memory rate limiter (Task 4-D).
 
-Per-IP request counting. In-memory only -- a distributed deployment would back this with
-Redis, but the interface (`allow`) would stay the same.
+Per-IP request counting over a moving time window. In-memory only -- a distributed
+deployment would back this with Redis, but the interface (`allow`) would stay the same.
 """
 from __future__ import annotations
 

@@ -7,10 +7,11 @@ from decimal import Decimal
 
 import pytest
 
-from src.compliance import CompliancePolicy, mask_account
-from src.currencies import has_valid_precision
 from src.models import TransactionCreate, TxType
-from src.regions import DEFAULT_ACCOUNT_RE, IdentityRateProvider, Region, get_region
+from src.services.compliance import CompliancePolicy
+from src.services.currencies import has_valid_precision
+from src.services.regions import DEFAULT_ACCOUNT_RE, IdentityRateProvider, Region, get_region
+from src.utils.masking import mask_account
 from src.validators import validate_transaction
 
 

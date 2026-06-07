@@ -1,4 +1,4 @@
-"""ISO 4217 currency reference data.
+"""ISO 4217 currency reference data and precision rules (domain logic).
 
 Each currency carries its number of *minor units* (decimal exponent). Amount precision
 is validated against this table rather than a hardcoded "2 decimals", so the same engine

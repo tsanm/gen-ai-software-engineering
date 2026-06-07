@@ -1,11 +1,11 @@
-"""In-memory transaction store.
+"""In-memory transaction store (data-access layer).
 
-Encapsulated behind a tiny interface so the persistence layer can be swapped for a real
-database later without touching routes or services. One instance per app (app.state).
+Encapsulated behind a tiny interface so the persistence mechanism can be swapped for a
+real database later without touching routes or services. One instance per app (app.state).
 """
 from __future__ import annotations
 
-from src.models import Transaction
+from src.models.transaction import Transaction
 
 
 class TransactionStore:
