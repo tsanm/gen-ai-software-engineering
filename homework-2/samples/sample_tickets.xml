@@ -1,0 +1,564 @@
+<?xml version="1.0" ?>
+<tickets>
+  <ticket>
+    <customer_id>CUST-1000</customer_id>
+    <customer_email>customer0@example.com</customer_email>
+    <customer_name>Customer 0</customer_name>
+    <subject>Cannot reset my password</subject>
+    <description>I requested a password reset but the email with the login link never arrives.</description>
+    <category>account_access</category>
+    <priority>high</priority>
+    <status>new</status>
+    <tags>
+      <tag>login</tag>
+      <tag>password</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Chrome</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1001</customer_id>
+    <customer_email>customer1@example.com</customer_email>
+    <customer_name>Customer 1</customer_name>
+    <subject>Locked out - can't access account</subject>
+    <description>This is critical, I can't access my account and a security alert was shown.</description>
+    <category>account_access</category>
+    <priority>urgent</priority>
+    <status>in_progress</status>
+    <tags>
+      <tag>login</tag>
+      <tag>security</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Firefox</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1002</customer_id>
+    <customer_email>customer2@example.com</customer_email>
+    <customer_name>Customer 2</customer_name>
+    <subject>App crashes on file upload</subject>
+    <description>The application crashes with an error every time I upload a file. Production down.</description>
+    <category>technical_issue</category>
+    <priority>urgent</priority>
+    <status>waiting_customer</status>
+    <tags>
+      <tag>crash</tag>
+      <tag>error</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Safari</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1003</customer_id>
+    <customer_email>customer3@example.com</customer_email>
+    <customer_name>Customer 3</customer_name>
+    <subject>Page loads slowly</subject>
+    <description>The dashboard page is not working well and times out occasionally.</description>
+    <category>technical_issue</category>
+    <priority>medium</priority>
+    <status>resolved</status>
+    <tags>
+      <tag>timeout</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Edge</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1004</customer_id>
+    <customer_email>customer4@example.com</customer_email>
+    <customer_name>Customer 4</customer_name>
+    <subject>Refund for duplicate charge</subject>
+    <description>I was charged twice on my last invoice and would like a refund for the duplicate.</description>
+    <category>billing_question</category>
+    <priority>medium</priority>
+    <status>closed</status>
+    <tags>
+      <tag>billing</tag>
+      <tag>refund</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Chrome</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1005</customer_id>
+    <customer_email>customer5@example.com</customer_email>
+    <customer_name>Customer 5</customer_name>
+    <subject>Question about my subscription</subject>
+    <description>I have a minor question about how my monthly subscription invoice is calculated.</description>
+    <category>billing_question</category>
+    <priority>low</priority>
+    <status>new</status>
+    <tags>
+      <tag>billing</tag>
+      <tag>subscription</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Firefox</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1006</customer_id>
+    <customer_email>customer6@example.com</customer_email>
+    <customer_name>Customer 6</customer_name>
+    <subject>Please add dark mode</subject>
+    <description>Feature request: it would be nice to add a dark mode for comfortable night usage.</description>
+    <category>feature_request</category>
+    <priority>low</priority>
+    <status>in_progress</status>
+    <tags>
+      <tag>enhancement</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Safari</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1007</customer_id>
+    <customer_email>customer7@example.com</customer_email>
+    <customer_name>Customer 7</customer_name>
+    <subject>Defect with steps to reproduce</subject>
+    <description>Here are the steps to reproduce the defect: open profile, click save, see the error.</description>
+    <category>bug_report</category>
+    <priority>high</priority>
+    <status>waiting_customer</status>
+    <tags>
+      <tag>bug</tag>
+      <tag>regression</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Edge</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1008</customer_id>
+    <customer_email>customer8@example.com</customer_email>
+    <customer_name>Customer 8</customer_name>
+    <subject>General feedback about the service</subject>
+    <description>I just wanted to share some general feedback with the team about my experience.</description>
+    <category>other</category>
+    <priority>medium</priority>
+    <status>resolved</status>
+    <tags>
+      <tag>feedback</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Chrome</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1009</customer_id>
+    <customer_email>customer9@example.com</customer_email>
+    <customer_name>Customer 9</customer_name>
+    <subject>Cannot reset my password</subject>
+    <description>I requested a password reset but the email with the login link never arrives.</description>
+    <category>account_access</category>
+    <priority>high</priority>
+    <status>closed</status>
+    <tags>
+      <tag>login</tag>
+      <tag>password</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Firefox</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1010</customer_id>
+    <customer_email>customer10@example.com</customer_email>
+    <customer_name>Customer 10</customer_name>
+    <subject>Locked out - can't access account</subject>
+    <description>This is critical, I can't access my account and a security alert was shown.</description>
+    <category>account_access</category>
+    <priority>urgent</priority>
+    <status>new</status>
+    <tags>
+      <tag>login</tag>
+      <tag>security</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Safari</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1011</customer_id>
+    <customer_email>customer11@example.com</customer_email>
+    <customer_name>Customer 11</customer_name>
+    <subject>App crashes on file upload</subject>
+    <description>The application crashes with an error every time I upload a file. Production down.</description>
+    <category>technical_issue</category>
+    <priority>urgent</priority>
+    <status>in_progress</status>
+    <tags>
+      <tag>crash</tag>
+      <tag>error</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Edge</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1012</customer_id>
+    <customer_email>customer12@example.com</customer_email>
+    <customer_name>Customer 12</customer_name>
+    <subject>Page loads slowly</subject>
+    <description>The dashboard page is not working well and times out occasionally.</description>
+    <category>technical_issue</category>
+    <priority>medium</priority>
+    <status>waiting_customer</status>
+    <tags>
+      <tag>timeout</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Chrome</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1013</customer_id>
+    <customer_email>customer13@example.com</customer_email>
+    <customer_name>Customer 13</customer_name>
+    <subject>Refund for duplicate charge</subject>
+    <description>I was charged twice on my last invoice and would like a refund for the duplicate.</description>
+    <category>billing_question</category>
+    <priority>medium</priority>
+    <status>resolved</status>
+    <tags>
+      <tag>billing</tag>
+      <tag>refund</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Firefox</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1014</customer_id>
+    <customer_email>customer14@example.com</customer_email>
+    <customer_name>Customer 14</customer_name>
+    <subject>Question about my subscription</subject>
+    <description>I have a minor question about how my monthly subscription invoice is calculated.</description>
+    <category>billing_question</category>
+    <priority>low</priority>
+    <status>closed</status>
+    <tags>
+      <tag>billing</tag>
+      <tag>subscription</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Safari</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1015</customer_id>
+    <customer_email>customer15@example.com</customer_email>
+    <customer_name>Customer 15</customer_name>
+    <subject>Please add dark mode</subject>
+    <description>Feature request: it would be nice to add a dark mode for comfortable night usage.</description>
+    <category>feature_request</category>
+    <priority>low</priority>
+    <status>new</status>
+    <tags>
+      <tag>enhancement</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Edge</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1016</customer_id>
+    <customer_email>customer16@example.com</customer_email>
+    <customer_name>Customer 16</customer_name>
+    <subject>Defect with steps to reproduce</subject>
+    <description>Here are the steps to reproduce the defect: open profile, click save, see the error.</description>
+    <category>bug_report</category>
+    <priority>high</priority>
+    <status>in_progress</status>
+    <tags>
+      <tag>bug</tag>
+      <tag>regression</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Chrome</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1017</customer_id>
+    <customer_email>customer17@example.com</customer_email>
+    <customer_name>Customer 17</customer_name>
+    <subject>General feedback about the service</subject>
+    <description>I just wanted to share some general feedback with the team about my experience.</description>
+    <category>other</category>
+    <priority>medium</priority>
+    <status>waiting_customer</status>
+    <tags>
+      <tag>feedback</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Firefox</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1018</customer_id>
+    <customer_email>customer18@example.com</customer_email>
+    <customer_name>Customer 18</customer_name>
+    <subject>Cannot reset my password</subject>
+    <description>I requested a password reset but the email with the login link never arrives.</description>
+    <category>account_access</category>
+    <priority>high</priority>
+    <status>resolved</status>
+    <tags>
+      <tag>login</tag>
+      <tag>password</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Safari</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1019</customer_id>
+    <customer_email>customer19@example.com</customer_email>
+    <customer_name>Customer 19</customer_name>
+    <subject>Locked out - can't access account</subject>
+    <description>This is critical, I can't access my account and a security alert was shown.</description>
+    <category>account_access</category>
+    <priority>urgent</priority>
+    <status>closed</status>
+    <tags>
+      <tag>login</tag>
+      <tag>security</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Edge</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1020</customer_id>
+    <customer_email>customer20@example.com</customer_email>
+    <customer_name>Customer 20</customer_name>
+    <subject>App crashes on file upload</subject>
+    <description>The application crashes with an error every time I upload a file. Production down.</description>
+    <category>technical_issue</category>
+    <priority>urgent</priority>
+    <status>new</status>
+    <tags>
+      <tag>crash</tag>
+      <tag>error</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Chrome</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1021</customer_id>
+    <customer_email>customer21@example.com</customer_email>
+    <customer_name>Customer 21</customer_name>
+    <subject>Page loads slowly</subject>
+    <description>The dashboard page is not working well and times out occasionally.</description>
+    <category>technical_issue</category>
+    <priority>medium</priority>
+    <status>in_progress</status>
+    <tags>
+      <tag>timeout</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Firefox</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1022</customer_id>
+    <customer_email>customer22@example.com</customer_email>
+    <customer_name>Customer 22</customer_name>
+    <subject>Refund for duplicate charge</subject>
+    <description>I was charged twice on my last invoice and would like a refund for the duplicate.</description>
+    <category>billing_question</category>
+    <priority>medium</priority>
+    <status>waiting_customer</status>
+    <tags>
+      <tag>billing</tag>
+      <tag>refund</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Safari</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1023</customer_id>
+    <customer_email>customer23@example.com</customer_email>
+    <customer_name>Customer 23</customer_name>
+    <subject>Question about my subscription</subject>
+    <description>I have a minor question about how my monthly subscription invoice is calculated.</description>
+    <category>billing_question</category>
+    <priority>low</priority>
+    <status>resolved</status>
+    <tags>
+      <tag>billing</tag>
+      <tag>subscription</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Edge</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1024</customer_id>
+    <customer_email>customer24@example.com</customer_email>
+    <customer_name>Customer 24</customer_name>
+    <subject>Please add dark mode</subject>
+    <description>Feature request: it would be nice to add a dark mode for comfortable night usage.</description>
+    <category>feature_request</category>
+    <priority>low</priority>
+    <status>closed</status>
+    <tags>
+      <tag>enhancement</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Chrome</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1025</customer_id>
+    <customer_email>customer25@example.com</customer_email>
+    <customer_name>Customer 25</customer_name>
+    <subject>Defect with steps to reproduce</subject>
+    <description>Here are the steps to reproduce the defect: open profile, click save, see the error.</description>
+    <category>bug_report</category>
+    <priority>high</priority>
+    <status>new</status>
+    <tags>
+      <tag>bug</tag>
+      <tag>regression</tag>
+    </tags>
+    <metadata>
+      <source>web_form</source>
+      <browser>Firefox</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1026</customer_id>
+    <customer_email>customer26@example.com</customer_email>
+    <customer_name>Customer 26</customer_name>
+    <subject>General feedback about the service</subject>
+    <description>I just wanted to share some general feedback with the team about my experience.</description>
+    <category>other</category>
+    <priority>medium</priority>
+    <status>in_progress</status>
+    <tags>
+      <tag>feedback</tag>
+    </tags>
+    <metadata>
+      <source>email</source>
+      <browser>Safari</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1027</customer_id>
+    <customer_email>customer27@example.com</customer_email>
+    <customer_name>Customer 27</customer_name>
+    <subject>Cannot reset my password</subject>
+    <description>I requested a password reset but the email with the login link never arrives.</description>
+    <category>account_access</category>
+    <priority>high</priority>
+    <status>waiting_customer</status>
+    <tags>
+      <tag>login</tag>
+      <tag>password</tag>
+    </tags>
+    <metadata>
+      <source>api</source>
+      <browser>Edge</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1028</customer_id>
+    <customer_email>customer28@example.com</customer_email>
+    <customer_name>Customer 28</customer_name>
+    <subject>Locked out - can't access account</subject>
+    <description>This is critical, I can't access my account and a security alert was shown.</description>
+    <category>account_access</category>
+    <priority>urgent</priority>
+    <status>resolved</status>
+    <tags>
+      <tag>login</tag>
+      <tag>security</tag>
+    </tags>
+    <metadata>
+      <source>chat</source>
+      <browser>Chrome</browser>
+      <device_type>mobile</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-1029</customer_id>
+    <customer_email>customer29@example.com</customer_email>
+    <customer_name>Customer 29</customer_name>
+    <subject>App crashes on file upload</subject>
+    <description>The application crashes with an error every time I upload a file. Production down.</description>
+    <category>technical_issue</category>
+    <priority>urgent</priority>
+    <status>closed</status>
+    <tags>
+      <tag>crash</tag>
+      <tag>error</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>Firefox</browser>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+</tickets>

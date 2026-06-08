@@ -1,0 +1,22 @@
+........................................................................ [ 87%]
+..........                                                               [100%]
+
+---------- coverage: platform darwin, python 3.12.2-final-0 ----------
+Name                             Stmts   Miss  Cover   Missing
+--------------------------------------------------------------
+src/config.py                       11      0   100%
+src/errors.py                       17      0   100%
+src/main.py                         73      2    97%   94-95
+src/models/store.py                 14      0   100%
+src/models/ticket.py                77      0   100%
+src/models/views.py                 18      0   100%
+src/routes/dependencies.py           7      0   100%
+src/routes/tickets.py               38      0   100%
+src/services/classifier.py          52      0   100%
+src/services/import_service.py      40      0   100%
+src/services/parsers.py             98      5    95%   41, 54, 73, 91, 102
+src/services/ticket_service.py      57      1    98%   51
+--------------------------------------------------------------
+TOTAL                              502      8    98%
+
+Required test coverage of 95.0% reached. Total coverage: 98.41%

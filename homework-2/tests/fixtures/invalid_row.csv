@@ -1,0 +1,3 @@
+customer_id,customer_email,customer_name,subject,description,category,priority,status,source,device_type
+CUST-200,good@example.com,Good Row,Valid subject here,This description is definitely long enough to pass.,other,medium,new,web_form,desktop
+CUST-201,not-an-email,Bad Email,Short,too short,other,medium,new,web_form,desktop

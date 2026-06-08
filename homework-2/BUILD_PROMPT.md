@@ -170,6 +170,32 @@ Package & tooling quality — match homework-1's stack exactly (read its `pyproj
   these scripts with no manual steps. (A `sonar-project.properties` to match homework-1 is a plus.)
 </quality_bar>
 
+<pitfalls_to_avoid>
+Concrete failure modes found by adversarial review of a prior build of this exact task. Avoid
+each by construction and cover each with a regression test:
+- Keyword/text classification must match on WHOLE TOKENS / word boundaries, never a raw
+  substring. A substring check makes "security" fire on "in​security", "error" on "terror",
+  "charge" on "recharge", and "500" on "1500" — producing wrong categories and priorities on
+  ordinary text. Use word-boundary regex (handling multi-word phrases like "production down"
+  and tokens like "2fa"/"500") or tokenize. Add a test asserting a keyword does NOT match
+  inside an unrelated longer word.
+- Keep keyword sets consistent across dimensions. When a phrase has spelling variants
+  ("can't access" / "cannot access" / "can not access"), handle every variant everywhere it
+  matters (both category and priority), ideally from one shared set. Test each variant.
+- Multi-record file parsers must handle BOTH a wrapped collection (e.g. `<tickets><ticket>…`)
+  AND a single bare record (`<ticket>…`), plus an empty collection. Never fall back to
+  "treat each child as a record" in a way that turns one bare record into many empty rows.
+  Test the single-record and empty cases for every format (CSV/JSON/XML).
+- Score/confidence outputs must be clamped to their documented range ([0,1]) for all inputs,
+  including the no-signal default.
+- A per-row import failure must never abort the batch; a malformed *file* must return 400, not
+  500. Test both. Likewise a bare `except` around a parser must narrow to a 400, not swallow
+  real bugs.
+
+These are examples of a general rule: write an adversarial test for every "looks obviously
+correct" matching/parsing path before trusting it.
+</pitfalls_to_avoid>
+
 <integrity_rules>
 These protect the trustworthiness of the result. Treat them as non-negotiable.
 - Report only real results. State a coverage %, a test count, or "it works" only when you are
@@ -315,6 +341,11 @@ NO and re-verify until all are YES:
 - Does the import summary report total / successful / failed with per-row error details?
 - Does auto-classify return category, priority, confidence ∈ [0,1], reasoning, keywords_found?
 - Do the priority keyword rules produce the documented priority for each keyword set?
+- Does keyword classification match on whole-token boundaries — i.e. a keyword does NOT fire
+  inside an unrelated longer word (tested with cases like "insecurity"/"terror"/"1500")?
+- Do all parsers handle a single bare record and an empty collection per format (tested),
+  not just the wrapped multi-record happy path?
+- Are all confidence/score outputs within their documented range for every input (tested)?
 - Do 400/404/422/429/500 all use the shared error envelope and carry an `X-Request-ID`, with no
   traceback leaked on 500?
 - Do all required test files exist and meet their minimum test counts?
@@ -389,6 +420,7 @@ Per Anthropic's current guidance, for coding/agentic work:
 | Layered structure + shared `{error,details[]}` envelope + `X-Request-ID` + safe 500s + `/health`+`/docs` | Mirrors homework-1's actual architecture so HW2 matches the established conventions |
 | Grounding each decision in the quoted requirement | Long-context "ground responses in quotes" technique |
 | XML structure, explicit scope, restated spec, CoVe, quality gates, uncertainty clause | XML tags, literal instruction following, self-check, define-success-criteria |
+| `<pitfalls_to_avoid>` (whole-token matching, keyword-set consistency, single/empty record parsing, score clamping, per-row import isolation) | Real bugs found by adversarial review of the first build — fed back so a fresh run avoids them by construction and tests them |
 | "Begin with Step 1" at the very end | Long-context: put the query at the end (up to ~30% quality gain) |
 
 ### Techniques deliberately *not* added
