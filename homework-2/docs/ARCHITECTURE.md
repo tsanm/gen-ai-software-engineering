@@ -1,28 +1,41 @@
 # Architecture — Intelligent Customer Support System
 
+This document is written for technical leads who need to understand the shape of the
+system, why it is structured the way it is, and how data flows through it. The codebase
+is a small FastAPI service that ingests customer-support tickets (single create or bulk
+CSV/JSON/XML import) and auto-classifies them with a transparent rules engine.
+
+## Layering at a glance
+
+Dependencies point strictly **inward**: `routes → services → models/store`. Routes are
+thin HTTP adapters and never contain domain logic; services own all use-cases and return
+view-model DTOs; models hold the entities, validation rules, and the persistence seam.
+Nothing in `models`/`store` imports `services`, and nothing in `services` imports
+`routes`.
+
 ## High-level view
 
 ```mermaid
 flowchart TD
-    subgraph HTTP
+    subgraph HTTP["HTTP / cross-cutting (main.py, errors.py)"]
       C[Client]
-      MW[Middleware<br/>request-id + access log]
+      MW[X-Request-ID middleware<br/>+ access log]
       EH[Exception handlers<br/>one error envelope]
     end
-    subgraph Routes
+    subgraph Routes["Routes (thin adapters)"]
       R[routes/tickets.py]
       D[routes/dependencies.py]
     end
-    subgraph Services
+    subgraph Services["Services (domain logic)"]
       TS[TicketService<br/>CRUD · filter · classify workflow]
       IS[ImportService<br/>parse → validate → create]
       PA[parsers.py<br/>CSV · JSON · XML]
       CL[classifier.py<br/>keyword rules engine]
     end
-    subgraph Models
-      M[Pydantic entities + enums]
-      V[view DTOs]
-      ST[TicketStore<br/>in-memory]
+    subgraph Models["Models / data (inner)"]
+      M[ticket.py<br/>entities + enums + validation]
+      V[views.py<br/>result DTOs]
+      ST[store.py<br/>TicketStore in-memory]
     end
 
     C --> MW --> R
@@ -33,25 +46,31 @@ flowchart TD
     TS --> CL
     TS --> ST
     R -. raises ApiError .-> EH
+    EH -. envelope .-> C
     TS --> M
     IS --> V
 ```
+
+Every response carries an `X-Request-ID`; every failure — whether a route/service
+`ApiError`, a Pydantic `RequestValidationError`, a Starlette `HTTPException`, or an
+unexpected `Exception` — is funneled through the same handlers in `main.py` and rendered
+as one envelope.
 
 ## Components
 
 | Layer | Module | Responsibility |
 |---|---|---|
-| HTTP | `main.py` | App factory, per-app state on `app.state`, middleware, exception handlers |
-| HTTP | `errors.py` | `ApiError`/`NotFound` + the single `{error, details[], requestId}` envelope |
-| Routes | `routes/tickets.py` | Thin adapters: parse request, call a service, shape the response |
-| Routes | `routes/dependencies.py` | Provide services from `app.state` to handlers |
-| Services | `ticket_service.py` | All ticket use-cases: id/timestamp generation, filtering, classification workflow, decision logging |
-| Services | `import_service.py` | Orchestrate bulk import; per-row validation; success/failure summary; size/count guards |
-| Services | `parsers.py` | Turn raw bytes into canonical rows for CSV/JSON/XML behind one interface; safe XML |
-| Services | `classifier.py` | Pure keyword rules → category, priority, confidence, reasoning, keywords |
-| Models | `models/ticket.py` | Entities, enums, create/update payloads; **all validation** |
-| Models | `models/views.py` | Transport-agnostic result DTOs (`ImportSummary`, `ClassificationResult`) |
-| Models | `models/store.py` | In-memory persistence behind a small swappable interface |
+| HTTP | `src/main.py` | `create_app(settings)` factory; builds per-app state on `app.state` (store + services); registers the X-Request-ID/access-log middleware and the four exception handlers; mounts the router and `/health` and `/`. |
+| HTTP | `src/errors.py` | `ApiError`/`NotFound` exception types and `error_body(...)`, which produces the single `{error, details[], requestId}` envelope. |
+| Routes | `src/routes/tickets.py` | Thin adapters for the `/tickets` endpoints: read the request, call a service, return its result. Holds no domain logic beyond format inference for uploads. |
+| Routes | `src/routes/dependencies.py` | FastAPI dependency providers that pull `TicketService`/`ImportService` off `app.state`, keeping handlers thin and letting tests swap state. |
+| Services | `src/services/ticket_service.py` | All ticket use-cases: id/timestamp generation, partial update, terminal-status `resolved_at` handling, filtering, the classification workflow, and per-decision structured logging. |
+| Services | `src/services/import_service.py` | Bulk-import orchestration: size/count DoS guards (413), parse → per-row validate → create, and an `ImportSummary` of total/successful/failed with per-row error detail. One bad row never aborts the import. |
+| Services | `src/services/parsers.py` | Turn raw file bytes into canonical row dicts for CSV/JSON/XML behind one `parse_records` interface; folds flat fields into nested `metadata`/`tags`; rejects malformed files with 400; XML parsed via `defusedxml`. |
+| Services | `src/services/classifier.py` | Pure, deterministic keyword rules engine: returns category, priority, confidence, human-readable reasoning, and the exact keywords matched. No external state. |
+| Models | `src/models/ticket.py` | Domain entities (`Ticket`), enums, and inbound payloads (`TicketCreate`/`TicketUpdate`). **All field validation lives here** (types, enum membership, length bounds, email). |
+| Models | `src/models/views.py` | Transport-agnostic result DTOs returned by services: `ImportSummary`, `RowError`, `ClassificationResult`. |
+| Models | `src/models/store.py` | `TicketStore` in-memory persistence behind a small interface (`add`/`get`/`list`/`delete`) — the single seam for a future database. |
 
 ## Data flow — bulk import with auto-classify
 
@@ -66,26 +85,34 @@ sequenceDiagram
     participant CL as classifier
     participant DB as TicketStore
 
-    C->>R: POST /tickets/import (file, format, auto_classify)
+    C->>R: POST /tickets/import (file, ?format, ?auto_classify)
+    R->>R: infer format from ext if not given
     R->>IS: import_file(bytes, fmt, auto_classify)
+    IS->>IS: guard size (max_import_bytes) → 413 if exceeded
     IS->>P: parse_records(bytes, fmt)
-    P-->>IS: [row, row, ...]  (or 400 if file malformed)
-    loop each row
-        IS->>TC: model_validate(row)
-        alt valid
-            IS->>TS: create(payload, auto_classify)
-            opt auto_classify
-                TS->>CL: classify(subject, description)
-                CL-->>TS: category, priority, confidence
+    alt file malformed / wrong encoding
+        P-->>IS: ApiError(400)
+        IS-->>C: 400 + envelope
+    else parsed
+        P-->>IS: [row, row, ...]
+        IS->>IS: guard count (max_import_records) → 413 if exceeded
+        loop each parsed row
+            IS->>TC: model_validate(row)
+            alt valid
+                IS->>TS: create(payload, auto_classify)
+                opt auto_classify
+                    TS->>CL: classify(subject, description)
+                    CL-->>TS: category, priority, confidence
+                end
+                TS->>DB: add(ticket)
+                TS-->>IS: ticket  (successful++, created_ids+=id)
+            else invalid
+                TC-->>IS: ValidationError  (failed++, RowError recorded)
             end
-            TS->>DB: add(ticket)
-            TS-->>IS: ticket  (successful++)
-        else invalid
-            TC-->>IS: ValidationError  (failed++, record row errors)
         end
+        IS-->>R: ImportSummary(total, successful, failed, errors)
+        R-->>C: 200 + summary
     end
-    IS-->>R: ImportSummary(total, successful, failed, errors)
-    R-->>C: 200 + summary
 ```
 
 ## Data flow — auto-classify an existing ticket
@@ -102,50 +129,76 @@ sequenceDiagram
     R->>TS: auto_classify(id)
     TS->>DB: get(id)
     alt found
+        DB-->>TS: ticket
         TS->>CL: classify(subject, description)
-        CL-->>TS: ClassificationResult
-        TS->>DB: update category/priority/confidence
-        TS-->>R: ClassificationResult (logged)
+        CL->>CL: lowercase text, word-boundary keyword match
+        CL-->>TS: ClassificationResult(category, priority, confidence, reasoning, keywords)
+        TS->>TS: write category/priority/confidence onto ticket; log decision
+        TS-->>R: ClassificationResult
         R-->>C: 200 + result
     else missing
-        TS-->>R: NotFound
+        DB-->>TS: None
+        TS-->>R: NotFound (404)
         R-->>C: 404 + envelope
     end
 ```
 
 ## Design decisions & trade-offs
 
-- **Validation in one place (Pydantic).** Both the API and the import path build the same
-  `TicketCreate`, so rules (email, length bounds, enums) are defined once. Trade-off: import
-  error messages are Pydantic's wording — acceptable, and they are mapped into our envelope.
-- **Rules-based classifier, not an LLM.** Deterministic, instant, testable, and free; it
-  returns the exact keywords it matched so decisions are explainable. Trade-off: no semantic
-  understanding — mitigated by ordered tie-breaking and an honest low confidence for `other`.
-  The classifier is isolated behind `classify()`, so an ML/LLM backend could replace it
-  without touching routes or services.
-- **In-memory store behind an interface.** Keeps the homework runnable with zero setup; the
-  `TicketStore` interface is the single seam to swap in a database later.
-- **Per-app state via a factory.** `create_app(settings)` gives every test isolated state and
-  removes module-level globals.
-- **One error envelope + request-id.** Uniform client experience and traceability across
-  400/404/413/500; 500s log full detail server-side but never leak it to callers.
+- **Validation lives in Pydantic, in one place.** Both the single-create API and every
+  parsed import row are funneled through the same `TicketCreate` model, so rules (email
+  format, length bounds, enum membership, required `metadata`) are defined exactly once.
+  Trade-off: import error messages inherit Pydantic's wording — acceptable, and they are
+  mapped into our `{field, message}` detail shape so callers still get the standard
+  envelope.
+- **Rules-based classifier with whole-token / word-boundary matching.** Classification is
+  deterministic, instant, free, and explainable: every keyword is pre-compiled to a
+  `\b<keyword>\b` regex, so matching respects word boundaries. This means `"security"`
+  does **not** match inside `"insecurity"`, and `"500"` does not match inside `"1500"`.
+  The engine returns the exact keywords it matched plus human-readable reasoning. Category
+  is chosen by match count with declaration order as the tie-breaker; priority is the first
+  matching tier. Trade-off: no semantic understanding — mitigated by ordered tie-breaking
+  and an honest low confidence (`0.3`) when nothing matches and the category defaults to
+  `other`. The whole engine is isolated behind `classify()`, so an ML/LLM backend could
+  replace it without touching routes or services.
+- **In-memory store behind an interface.** `TicketStore` exposes a tiny `add/get/list/delete`
+  surface, keeping the service runnable with zero setup. That interface is the single seam
+  to swap in a real database later — routes and services would not change.
+- **Per-app factory, no module globals.** `create_app(settings)` builds an isolated app with
+  its own store and services on `app.state`. Every test gets fresh state, configuration is
+  injected rather than read from hidden globals, and a module-level `app = create_app()`
+  still serves `uvicorn src.main:app`.
+- **One error envelope + request id.** All failures (400/404/413/422/500) render through the
+  same `{error, details[], requestId}` body and carry an `X-Request-ID`, giving clients a
+  uniform experience and end-to-end traceability.
 
 ## Security considerations
 
-- **XXE-safe XML** via `defusedxml` (external entities and entity expansion are refused).
-- **Input validation at the boundary**: every field is type/'enum/length/email-checked.
-- **DoS guards**: import file-size (`max_import_bytes`) and record-count (`max_import_records`)
-  limits return `413` rather than exhausting memory.
-- **No information leakage**: unexpected errors return a generic 500; `bandit` runs in the gate.
+- **XXE-safe XML parsing.** XML imports go through `defusedxml`, which refuses external
+  entity references and entity-expansion ("billion laughs") attacks; a hostile XML file is
+  rejected as a malformed file (400) rather than triggering file/network access.
+- **Boundary validation.** Every inbound field is type-, enum-, length-, and email-checked
+  by Pydantic at the edge before any domain code runs, so malformed or oversized field
+  values never reach the store.
+- **Import size/count DoS guards → 413.** Bulk import enforces a byte-size cap
+  (`max_import_bytes`) before parsing and a record-count cap (`max_import_records`) after
+  parsing; exceeding either returns `413` instead of exhausting memory.
+- **No information leakage on 500.** The catch-all exception handler logs full exception
+  detail server-side but returns only a generic `"Internal server error"` envelope to the
+  caller — no stack traces or internal messages cross the boundary.
 
 ## Performance considerations
 
-- Parsing and classification are **O(n)** in input size; classification is pure string
-  scanning over a fixed keyword set.
-- Store operations are dict-based **O(1)** for get/add/delete; list/filter are **O(n)**.
-- `test_performance.py` asserts bounds for 200 creates, a 500-row import, and listing.
+- **Parsing and classification are O(n)** in the size of the input. Classification is pure
+  string scanning over a fixed, pre-compiled keyword set, with no backtracking on input
+  length.
+- **Store get/add are O(1)** (dict-keyed by id); `delete` is O(1); `list`/filter are O(n)
+  over the current ticket set.
+- **Performance is tested.** `tests/test_performance.py` asserts time bounds for 200
+  sequential creates, a 500-row CSV import, unfiltered and filtered listing over 500
+  tickets, and 100 repeated classifications of a near-max-length description — catching
+  accidentally quadratic regressions while staying tolerant of slow CI.
 
 ---
 
-*Generated with Claude Opus 4.8 — chosen for architectural reasoning, trade-off analysis,
-and multi-diagram data-flow modeling.*
+*Generated with Claude Opus 4.8 — architecture (reasoning and multi-diagram data-flow modeling).*

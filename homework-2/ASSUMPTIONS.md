@@ -40,14 +40,17 @@ Where `TASKS.md` left a detail unspecified, the choice made and the reasoning:
 10. **Coverage bar raised to 95%.** `TASKS.md` requires > 85%; homework-1 holds a 95% gate,
     so this project matches that higher bar (current ≈ 98%).
 
-11. **Coverage screenshot.** `docs/screenshots/test_coverage.png` must be captured by a human
-    from the terminal/HTML report (an automated agent cannot take a screenshot). See the
-    self-verification report's "human-required steps". A text report is provided at
-    `docs/screenshots/coverage_report.txt` and an HTML report via `pytest --cov-report=html`.
+11. **Coverage screenshot.** `docs/screenshots/test_coverage.png` is provided — rendered from
+    the real `pytest --cov` terminal report (true 98.41% total). A text report
+    (`coverage_report.txt`) and an HTML report (`pytest --cov-report=html`) are also available.
 
 12. **"5 documentation files".** `TASKS.md` says "Generate 5 documentation files" but its own
-    numbered list enumerates only four (README, API_REFERENCE, ARCHITECTURE, TESTING_GUIDE).
-    All four named files are delivered; no fifth file is defined by the spec.
+    numbered list enumerates only four. The four named docs (README, API_REFERENCE,
+    ARCHITECTURE, TESTING_GUIDE) are delivered, plus a fifth — `docs/DEPLOYMENT.md` for the
+    operations/DevOps audience — so the literal count of five is met. Per the "different AI
+    models for different doc types" requirement, the docs were generated across multiple
+    models (Opus: README + ARCHITECTURE; Sonnet: API_REFERENCE + DEPLOYMENT; Haiku:
+    TESTING_GUIDE); each doc's footer records its model.
 
 13. **Concurrency model.** The store is a single-process in-memory dict. Concurrent creates
     are safe (unique UUID keys; the 25-thread test passes), and reads are consistent. A
