@@ -136,7 +136,7 @@ method. Screenshots of the interactions are in [`docs/screenshots/`](docs/screen
 | Model + Prompt | [`ai_usage_2_build_prompt.png`](docs/screenshots/ai_usage_2_build_prompt.png) | Authoring the reusable, self-contained build prompt (`BUILD_PROMPT.md`). |
 | Execution | [`ai_usage_3_execution.png`](docs/screenshots/ai_usage_3_execution.png) | Executing the prompt end-to-end — scaffolding the project mirroring homework-1's conventions. |
 
-Test-coverage evidence: [`test_coverage.png`](docs/screenshots/test_coverage.png) · [`coverage_report.txt`](docs/screenshots/coverage_report.txt).
+Test-coverage evidence: [`test_coverage.png`](docs/screenshots/test_coverage.png) · [`coverage_report.txt`](docs/coverage_report.txt).
 
 ---
 
