@@ -85,10 +85,12 @@ Full request/response reference: [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md
 ./demo/test-api.sh                                                 # curl smoke test of every endpoint
 ```
 
-`./demo/test-api.sh` boots a throwaway server, then runs `curl` against **every** endpoint
-(happy + error paths — create, import CSV/JSON/XML, classify, filter, update, delete, 400/404s),
-asserting each HTTP status code. It exits non-zero on any failure. Point it at an already-running
-server with `BASE_URL=http://localhost:3000 ./demo/test-api.sh`.
+`./demo/test-api.sh` boots a throwaway server and walks `curl` through **every** endpoint
+(happy + error paths — create, import CSV/JSON/XML, classify, filter, update, delete, 400/404s).
+For each call it prints the **exact, copy-pasteable curl command** (method, URL, headers, body)
+followed by the **full response** (status line, headers via `-i`, and the pretty-printed JSON body),
+so you can see and re-run every request by hand. Point it at an already-running server with
+`BASE_URL=http://localhost:3000 ./demo/test-api.sh`.
 
 `./demo/quality.sh` runs the complete local gate: **ruff** (lint + import order), **mypy** (static types), **bandit** (security analysis), **radon** (cyclomatic complexity — fails on any C-or-worse block), and **pytest + coverage** (fails under 95%).
 
