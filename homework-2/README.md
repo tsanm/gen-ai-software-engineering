@@ -125,6 +125,19 @@ homework-2/
 - [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) — running and deploying the service.
 - [`ASSUMPTIONS.md`](ASSUMPTIONS.md) — design decisions and scope assumptions.
 
+## AI usage
+
+This homework was built AI-first with Claude Code (Opus 4.8) using the **Context → Model → Prompt**
+method. Screenshots of the interactions are in [`docs/screenshots/`](docs/screenshots/):
+
+| Step | Screenshot | What it shows |
+|------|-----------|---------------|
+| Context | [`ai_usage_1_context.png`](docs/screenshots/ai_usage_1_context.png) | Gathering context — reading the workshop deck and `TASKS.md` to capture the real requirements. |
+| Model + Prompt | [`ai_usage_2_build_prompt.png`](docs/screenshots/ai_usage_2_build_prompt.png) | Authoring the reusable, self-contained build prompt (`BUILD_PROMPT.md`). |
+| Execution | [`ai_usage_3_execution.png`](docs/screenshots/ai_usage_3_execution.png) | Executing the prompt end-to-end — scaffolding the project mirroring homework-1's conventions. |
+
+Test-coverage evidence: [`test_coverage.png`](docs/screenshots/test_coverage.png) · [`coverage_report.txt`](docs/screenshots/coverage_report.txt).
+
 ---
 
 *Generated with Claude Opus 4.8 — developer documentation (structural overview of the codebase).*
