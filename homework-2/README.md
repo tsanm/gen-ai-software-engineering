@@ -82,7 +82,13 @@ Full request/response reference: [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md
 ```bash
 ./.venv/bin/python -m pytest --cov=src --cov-report=term-missing   # 82 tests, ~98% coverage
 ./demo/quality.sh                                                  # full quality gate
+./demo/test-api.sh                                                 # curl smoke test of every endpoint
 ```
+
+`./demo/test-api.sh` boots a throwaway server, then runs `curl` against **every** endpoint
+(happy + error paths — create, import CSV/JSON/XML, classify, filter, update, delete, 400/404s),
+asserting each HTTP status code. It exits non-zero on any failure. Point it at an already-running
+server with `BASE_URL=http://localhost:3000 ./demo/test-api.sh`.
 
 `./demo/quality.sh` runs the complete local gate: **ruff** (lint + import order), **mypy** (static types), **bandit** (security analysis), **radon** (cyclomatic complexity — fails on any C-or-worse block), and **pytest + coverage** (fails under 95%).
 
@@ -111,7 +117,7 @@ homework-2/
 ├── tests/                      # 9 test files + fixtures/  (pytest)
 ├── docs/                       # API_REFERENCE, ARCHITECTURE, TESTING_GUIDE, DEPLOYMENT, screenshots/
 ├── samples/                    # deliverable datasets (valid + invalid CSV/JSON/XML)
-├── demo/                       # run.sh, quality.sh, sample-requests.http
+├── demo/                       # run.sh, quality.sh, test-api.sh, sample-requests.http
 ├── requirements.txt            # runtime dependencies
 ├── requirements-dev.txt        # runtime + tooling
 └── pyproject.toml              # ruff / mypy / bandit / pytest / coverage config
