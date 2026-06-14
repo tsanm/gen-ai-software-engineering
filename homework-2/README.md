@@ -90,7 +90,8 @@ Full request/response reference: [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md
 For each call it prints the **exact, copy-pasteable curl command** (method, URL, headers, body)
 followed by the **full response** (status line, headers via `-i`, and the pretty-printed JSON body),
 so you can see and re-run every request by hand. Point it at an already-running server with
-`BASE_URL=http://localhost:3000 ./demo/test-api.sh`.
+`BASE_URL=http://localhost:3000 ./demo/test-api.sh`. A captured run is checked in at
+[`docs/api-walkthrough.txt`](docs/api-walkthrough.txt) as request/response evidence.
 
 `./demo/quality.sh` runs the complete local gate: **ruff** (lint + import order), **mypy** (static types), **bandit** (security analysis), **radon** (cyclomatic complexity — fails on any C-or-worse block), and **pytest + coverage** (fails under 95%).
 
