@@ -92,6 +92,19 @@ and the issuance task.
 | **Reconciliation against source-of-truth ledger** | `specification.md` → *Task 20*; *Verification (M4)* |
 | **Quality gate for any implementation** (ruff/mypy/bandit/radon/coverage) | `agents.md` §1, §4; `.claude/CLAUDE.md` Definition of done |
 
+## AI usage & screenshots
+
+This is a **specification-only** homework (no app to run), so the screenshots evidence the
+**AI-assisted process** that produced the spec and that the documents render correctly. They live
+in [`docs/screenshots/`](docs/screenshots/) (see that folder's `README.md` for the capture list):
+
+| Screenshot | Shows |
+|------------|-------|
+| `ai_spec_design.png` | AI session designing the layered spec (objectives M1–M7 → 20 low-level tasks). |
+| `ai_agents_rules.png` | Authoring `agents.md` / `.claude/CLAUDE.md` — the FinTech guardrails. |
+| `spec_state_machine.png` | The rendered card-lifecycle Mermaid state diagram from `specification.md`. |
+| `spec_traceability.png` | The rendered Traceability Matrix (goals → tasks → edge cases → verification). |
+
 ---
 
 <div align="center">
