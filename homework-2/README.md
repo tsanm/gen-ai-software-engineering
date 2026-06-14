@@ -145,6 +145,20 @@ method. Screenshots of the interactions are in [`docs/screenshots/`](docs/screen
 | Model + Prompt | [`ai_usage_2_build_prompt.png`](docs/screenshots/ai_usage_2_build_prompt.png) | Authoring the reusable, self-contained build prompt (`BUILD_PROMPT.md`). |
 | Execution | [`ai_usage_3_execution.png`](docs/screenshots/ai_usage_3_execution.png) | Executing the prompt end-to-end — scaffolding the project mirroring homework-1's conventions. |
 
+- **Context** — requirements captured from `TASKS.md` + the workshop deck, distilled into the reusable, self-contained build prompt [`BUILD_PROMPT.md`](BUILD_PROMPT.md).
+- **Model** — a **different model was chosen per documentation type**, matched to the task (reasoning-heavy → Opus, mechanical contract extraction → Sonnet, structured QA tables → Haiku):
+
+  | Document | Model | Why this model |
+  |----------|-------|----------------|
+  | README.md | Claude Opus 4.8 | structural overview / developer narrative |
+  | ARCHITECTURE.md | Claude Opus 4.8 | reasoning + multi-diagram data-flow modeling |
+  | API_REFERENCE.md | Claude Sonnet 4.6 | mechanical extraction of endpoint contracts |
+  | DEPLOYMENT.md | Claude Sonnet 4.6 | operational steps and config |
+  | TESTING_GUIDE.md | Claude Haiku 4.5 | structured checklists and tables |
+
+  (each document carries this attribution in its footer.)
+- **Prompt** — TDD-first build prompt, then an adversarial multi-agent review pass; see [`SELF_VERIFICATION.md`](SELF_VERIFICATION.md).
+
 Test-coverage evidence: [`test_coverage.png`](docs/screenshots/test_coverage.png) · [`coverage_report.txt`](docs/coverage_report.txt).
 
 ---
