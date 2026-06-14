@@ -119,6 +119,29 @@ the payment hot path), state-changing writes **p95 ≤ 400 ms** including the au
 - **Determinism.** Authorization evaluation (M7) must be a **pure function** of (card snapshot,
   candidate transaction) so it is testable, explainable, and replay-safe.
 
+### Error Code Catalog (authoritative)
+
+Every error returned by this feature uses the envelope above with exactly one of these stable
+machine codes. This catalog is the single source of truth — an implementer must not invent codes
+or HTTP mappings outside it. (`401 unauthenticated` from the auth layer is assumed upstream.)
+
+| Machine code | When it occurs | HTTP | Originates in |
+|--------------|----------------|------|---------------|
+| `validation_error` | Malformed body, unknown/extra field, negative/oversized limit | `400` | Tasks 7, 9 · E5 |
+| `currency_mismatch` | Limit set in a currency ≠ the card's; or candidate spend currency ≠ card | `400` (set) / decline (authz) | Tasks 9, 10 · E6 |
+| `forbidden` | Authenticated but not owner, or role lacks permission | `403` | Tasks 8–13 · E10 |
+| `not_found` | Card does not exist, or is hidden to avoid existence disclosure | `404` | Tasks 8–13 · E10 |
+| `idempotency_conflict` | Same `Idempotency-Key`, different request body | `409` | Task 5 · E3 |
+| `version_conflict` | Optimistic-concurrency CAS failed (stale `version`) | `409` | Tasks 3, 9 · E4 |
+| `invalid_transition` | State-machine rejects the transition (e.g. `terminated→active`) | `422` | Tasks 2, 8, 13 · E12 |
+| `rate_limited` | Per-owner request rate exceeded | `429` | Task 15 |
+| `dependency_down` | Required dependency (vault, etc.) unavailable — **fail closed** | `503` | Task 4 · E1 |
+
+**Authorization decline reasons** (M7 `evaluate` returns these in the `Decision`, not as HTTP
+errors — the decision itself is a successful `200` carrying approve/decline + reason):
+`card_frozen`, `card_terminated`, `limit_exceeded`, `rolling_limit_exceeded`, `currency_mismatch`,
+and `evaluation_unavailable` (fail-closed when an input is missing). *(→ Task 10, E7–E9)*
+
 ---
 
 ## Context
@@ -340,7 +363,7 @@ the audit/compliance implication where relevant.
 | E1 | Issue while PAN vault is down | `503 dependency_down`; **no** card row created (fail closed); no `card.issued` audit; user may retry with same idempotency key |
 | E2 | Replay of a state-changing request (same key+body) | Original result returned; **no** second state change and **no** duplicate audit event |
 | E3 | Replay with same key, different body | `409 idempotency_conflict`; no state change |
-| E4 | Concurrent freeze + limit change on one card | Optimistic concurrency: one succeeds, the other re-reads or gets `409 version_conflict`; final state consistent; both attempts visible in audit (one as conflict) |
+| E4 | Concurrent freeze + limit change on one card | Optimistic concurrency: one succeeds (audited as a state change), the other gets `409 version_conflict`; final state consistent. The failed attempt is **not** written to the immutable state-change audit chain (no state changed) but is recorded as an operational/security log event for forensics |
 | E5 | Set negative / non-numeric / oversized limit | `400 validation`; no change; not audited as a limit change |
 | E6 | Set limit in a different currency than the card | `400 currency_mismatch`; no change |
 | E7 | Authorize a spend on a frozen card | Decline `card_frozen`; decision is deterministic and explainable; no state change |
@@ -406,7 +429,7 @@ Throughput is expected to scale horizontally (stateless service; card aggregate 
 
 | Mid-level | Low-level tasks | Edge cases | Verification |
 |-----------|-----------------|-----------|--------------|
-| M1 Issue | 3, 4, 5, 7 | E1, E2, E3 | M1 row above |
+| M1 Issue | 1, 3, 4, 5, 7 | E1, E2, E3 | M1 row above |
 | M2 Freeze/unfreeze | 2, 8, 16 | E2, E7, E16 | M2 row |
 | M3 Limits | 9, 16 | E4, E5, E6 | M3 row |
 | M4 Transactions | 11 | E13, E14 | M4 row |
