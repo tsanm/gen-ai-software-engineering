@@ -35,8 +35,9 @@ Internalize these so you apply them without re-reading; the exact codes/numbers 
 - **Idempotent + audited together.** Every mutation takes an `Idempotency-Key` and writes its audit
   event in the same transaction; a replay yields no second state change and no duplicate audit.
   *(spec → Implementation Notes, Audit; Tasks 5, 6)*
-- **Default-deny.** Verify the JWT; enforce ownership + role on every endpoint; never disclose
-  others' cards; audit ops reads of another user's card. *(spec → Security; E10, E11)*
+- **Default-deny.** Verify the principal; enforce ownership + role on every endpoint; another user's
+  card → `404` (never `403`, no existence leak), `403` only for role failures; audit ops reads of
+  another user's card. *(spec → Security; Error Catalog → Mapping rules; E10, E11)*
 - **Money & errors** exactly as the spec defines: integer minor units + `Decimal`, never `float`, no
   cross-currency comparison; one error envelope using only the **Error Code Catalog**.
 
@@ -52,8 +53,9 @@ Internalize these so you apply them without re-reading; the exact codes/numbers 
 - **On ambiguity, don't guess silently:** pick the most standard, auditable interpretation,
   implement it, and record it in `ASSUMPTIONS.md`.
 - **Layering:** `api → services → domain → repo/integrations`, dependencies inward; thin handlers;
-  `domain/` (`card`, `lifecycle`, `authorize`) has no framework/I/O imports. Full type hints, small
-  single-responsibility functions, no dead code.
+  `domain/` (`card`, `lifecycle`, `authorize`) has no framework/I/O imports. Pure data models
+  (Pydantic/dataclasses) are fine in `domain/`; "no I/O" means no network/db/file/clock calls. Typed
+  error *classes* live in `domain/` (HTTP mapping in `platform/`). Full type hints, small functions, no dead code.
 
 ## 4. Testing expectations
 Treat the spec's **Verification** and **Edge Cases** tables as the test backlog. Minimum bar:

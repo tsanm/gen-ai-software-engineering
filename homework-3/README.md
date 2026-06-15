@@ -132,6 +132,17 @@ and the issuance task.
 | **Closed-world / anti-hallucination contract** (don't invent endpoints, fields, or codes; ask-don't-guess; single sources of truth) | `specification.md` → *How to execute this spec* |
 | **Exact contracts for deterministic execution** (typed domain model, binding function signatures, full API surface, ordered decision precedence + strict boundary) | `specification.md` → *Domain Model*, *API Contract*, *Authorization decision logic* |
 
+## Spec validated end-to-end (cold-agent test)
+
+To prove the package is executable **without guessing**, I had a **fresh-context agent** — no chat
+history, no access to other homework — implement the entire feature from *only* `specification.md`,
+`agents.md`, and `.claude/CLAUDE.md`, then run the quality gate. Result: a complete, working
+virtual-card service — **88 tests passing, 97.86% coverage, `ruff`/`mypy`/`bandit`/`radon` all
+green**. The handful of ambiguities it surfaced (rolling-window `evaluation_unavailable` wording,
+`403`-vs-`404` existence disclosure, the opaque-cursor encoding, the transaction-stream client,
+typed-error placement) were folded back into the spec, so the next implementer hits none of them.
+The throwaway implementation was then discarded — this remains a **spec-only** deliverable.
+
 ## AI usage & screenshots
 
 This is a **specification-only** homework (no app to run), so the evidence is the **AI-assisted

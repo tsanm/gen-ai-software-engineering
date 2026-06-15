@@ -135,8 +135,10 @@ the payment hot path), state-changing writes **p95 ≤ 400 ms** including the au
 - **Error semantics.** One error envelope `{ "error": <machine_code>, "message": <human>,
   "details": [...], "requestId": <uuid> }`. Use typed machine codes (e.g. `card_frozen`,
   `limit_exceeded`, `invalid_transition`, `not_found`, `forbidden`). HTTP codes: `200/201`,
-  `400` validation, `403` ownership/role, `404` not found, `409` conflict/idempotency,
-  `422` illegal state transition, `429` rate limited, `503` dependency-down (fail closed).
+  `400` validation, `403` **role-permission only**, `404` not-found **and** owner-mismatch (no
+  existence leak), `409` conflict/idempotency, `422` illegal state transition, `429` rate limited,
+  `503` dependency-down (fail closed). The *Error Code Catalog → Mapping rules* is authoritative on
+  the `403`/`404`, validation-vs-`422`, and `details`-shape edge cases.
 - **Concurrency.** The card aggregate carries a `version`; writes use optimistic concurrency
   (compare-and-set). A limit change and a concurrent freeze must not interleave to leave an
   inconsistent state — last writer must re-validate against current state or fail with `409`.
@@ -144,7 +146,15 @@ the payment hot path), state-changing writes **p95 ≤ 400 ms** including the au
   endpoint mutates `status` directly. Allowed transitions only (see Domain Model).
 - **Time.** All timestamps UTC, ISO-8601 with offset; the server is the clock of record.
 - **Determinism.** Authorization evaluation (M7) must be a **pure function** of (card snapshot,
-  candidate transaction) so it is testable, explainable, and replay-safe.
+  candidate transaction, window usage) so it is testable, explainable, and replay-safe.
+- **Caller identity.** The API gateway authenticates the JWT and passes this feature the **verified**
+  principal — `owner_id` (= token `sub`) and `role` (`user` | `ops`). This feature re-enforces
+  ownership/role but does not parse raw JWTs; `401 unauthenticated` is the gateway's responsibility.
+- **Error placement.** Typed error *classes* live in `domain/` so `domain` and `repo` can raise them
+  without importing `platform`; only the HTTP envelope + status mapping live in `platform/errors`.
+- **Atomicity.** A state change and its audit event commit **together** (one DB transaction / outbox
+  in production; for the in-memory store, one logical operation that writes the audit only after the
+  state write succeeds — both or neither).
 
 ### Error Code Catalog (authoritative)
 
@@ -168,6 +178,15 @@ or HTTP mappings outside it. (`401 unauthenticated` from the auth layer is assum
 errors — the decision itself is a successful `200` carrying approve/decline + reason):
 `card_frozen`, `card_terminated`, `limit_exceeded`, `rolling_limit_exceeded`, `currency_mismatch`,
 and `evaluation_unavailable` (fail-closed when an input is missing). *(→ Task 10, E7–E9)*
+
+**Mapping rules (authoritative — resolve the ambiguous cases):**
+- **Owner mismatch or unknown card → `404 not_found`** (never `403`), so the existence of another
+  user's card is never disclosed. `403 forbidden` is used **only** for role-permission failures that
+  do not reference a specific card id (e.g. a `user` calling an `ops` endpoint).
+- **All body / field / query validation → `400 validation_error`** — including a missing required
+  `Idempotency-Key` and a malformed pagination cursor. `422 invalid_transition` is reserved
+  **exclusively** for the state machine; framework body-validation must be remapped to `400`.
+- **`details`** is a (possibly empty) list of `{ "field": <string>, "message": <string> }` objects.
 
 ---
 
@@ -227,15 +246,16 @@ a `null` limit is an explicit, audited "unlimited". **No PAN/CVV field exists on
 | `owner_id` | string (opaque) | from JWT `sub`; immutable |
 | `card_token` | string | opaque vault reference — **never** a PAN |
 | `last4` | string(4) | digits only; display use only |
-| `currency` | ISO-4217 | immutable for the card's life |
+| `currency` | ISO-4217 | immutable for the card's life; validated as 3 uppercase letters (full ISO-4217 table check optional) |
 | `status` | `CardStatus` | `active` \| `frozen` \| `terminated`; changes **only** via `transition()` |
 | `per_txn_limit_minor` | int ≥ 0 \| null | card currency; null = unlimited |
-| `rolling_window` | {`amount_minor` int ≥ 0, `period` `DAY`\|`WEEK`\|`MONTH`} \| null | null = unlimited |
+| `rolling_window` | {`amount_minor` int ≥ 0, `period` `DAY`\|`WEEK`\|`MONTH`} \| null | null = unlimited; period durations in *Authorization decision logic* |
 | `version` | int ≥ 1 | optimistic-concurrency token; +1 per committed state change |
 | `created_at`,`updated_at` | UTC ISO-8601 | server is clock of record |
 | `terminated_at` | UTC ISO-8601 \| null | set once, on terminate |
 
-**TransactionView** — read model projected from the external stream; this feature never writes it:
+**TransactionView** — read model projected from the external stream; this feature never writes it.
+The stream is keyed by `card_token`; the projection maps `card_token → card_id` for owner-scoping:
 `txn_id` (pk) · `card_id` · `amount_minor` (int) · `currency` · `merchant` · `status`
 (`pending`\|`posted`\|`declined`\|`reversed`) · `at` (UTC).
 
@@ -291,7 +311,9 @@ Authorization is a function of `status` + limits + currency, with rolling-window
 external stream — never of the card row's own state. `evaluate` checks in this **exact order** and
 returns on the **first** match (so the outcome is deterministic and explainable):
 
-1. any required input missing (e.g. `window_usage is None`) → decline `evaluation_unavailable` *(fail closed)*
+1. a **required** input is missing — `card` or `txn` absent, **or** a rolling window is configured
+   but its `window_usage` could not be fetched (`is None`) → decline `evaluation_unavailable`
+   *(fail closed)*. A card with **no** rolling window does not require `window_usage`.
 2. `status == terminated` → decline `card_terminated`
 3. `status == frozen` → decline `card_frozen`
 4. `txn.currency != card.currency` → decline `currency_mismatch`
@@ -301,13 +323,18 @@ returns on the **first** match (so the outcome is deterministic and explainable)
 
 Comparisons are strict (`>`): `amount == limit` **approves**; `amount == limit + 1` declines (E8).
 
+**Rolling window semantics:** `DAY` / `WEEK` / `MONTH` are rolling look-back durations of **1 / 7 /
+30 days** ending at evaluation time (not calendar months). `window_usage` is the sum of `posted` +
+`pending` transaction amounts within that window; `declined` / `reversed` do **not** accrue.
+
 ---
 
 ## API Contract (authoritative surface)
 
-These are the **only** endpoints. All require a verified JWT and enforce ownership; all mutations
-require an `Idempotency-Key`. HTTP/codes per the *Error Code Catalog*; every response carries
-`X-Request-ID`. `{id}` is a `card_id` (UUIDv4); `403`/`404` never disclose others' cards.
+These are the **only** endpoints. All require a verified principal and enforce ownership; all
+mutations require an `Idempotency-Key`. HTTP/codes per the *Error Code Catalog* (incl. its **mapping
+rules**); every response carries `X-Request-ID`. `{id}` is a `card_id` (UUIDv4). Another user's card
+→ `404` (never `403`, no existence disclosure); `403` is only for role failures (e.g. `user` → ops).
 
 | Method & path | Role | Mutates | Success | Primary error codes | Task |
 |---------------|------|---------|---------|---------------------|------|
@@ -320,9 +347,13 @@ require an `Idempotency-Key`. HTTP/codes per the *Error Code Catalog*; every res
 | `GET /cards/{id}/transactions` | owner | no | `200` page | `forbidden`/`not_found`, `validation_error` | 11 |
 | `GET /ops/cards/{id}` | ops | no (audits read) | `200` card + audit chain | `forbidden` | 12 |
 
-List endpoints use opaque **cursor** pagination (default 50, max 100), newest-first
-`(at desc, txn_id desc)`. **Authorization (M7)** is an internal **pure evaluation** (`evaluate`)
-invoked by the payment path — not a user-facing REST endpoint in this feature's scope.
+**Pagination (list endpoints).** Response shape `{ "items": [...], "next_cursor": <string|null> }`
+(`next_cursor` is `null` on the last page). `?limit=` defaults to **50**, max **100**; ordering is
+`(at desc, txn_id desc)`. The cursor is **opaque** — URL-safe base64 of `"<at>|<txn_id>"`, passed
+back as `?cursor=`; a malformed cursor → `400 validation_error`.
+
+**Authorization (M7)** is an internal **pure evaluation** (`evaluate`) invoked by the payment path —
+not a user-facing REST endpoint in this feature's scope.
 
 ---
 
@@ -345,6 +376,15 @@ POST /cards   Authorization: Bearer <jwt: sub=owner_42, role=user>   Idempotency
   "rolling_window": { "amount_minor": 200000, "period": "MONTH" },
   "version": 1, "created_at": "2026-06-16T12:00:00Z" }
 ```
+
+**Set limits** — `PUT /cards/{id}/limits` (full replace) → `200` card:
+```http
+PUT /cards/8f3b…/limits   Authorization: Bearer <…owner_42…>   Idempotency-Key: 7a2f…b1
+
+{ "per_txn_limit_minor": 75000, "rolling_window": { "amount_minor": 300000, "period": "MONTH" } }
+```
+→ audited `limit.changed` (before→after); `version` becomes `2`. Send `null` for either field to set
+"unlimited" (explicitly audited). An optional `currency` ≠ the card's → `400 currency_mismatch`.
 
 **Authorization** — `evaluate(card_snapshot, candidate_txn, window_usage) → Decision` (pure; M7):
 ```jsonc
@@ -394,7 +434,7 @@ src/
   services/     # issue, status, limits, txn_view              (Tasks 7,8,9,11,13)
   domain/       # card, lifecycle, authorize — no framework/IO (Tasks 1,2,10)
   repo/         # card_repo (optimistic concurrency)           (Task 3)
-  integrations/ # vault, notify                                (Tasks 4,16)
+  integrations/ # vault, notify, stream (txn/ledger reader)    (Tasks 4,16,10,11)
   platform/     # idempotency, audit, errors, middleware       (Tasks 5,6,14,15)
 tests/          # unit · integration · e2e · compliance        (Tasks 17–20)
 ```
@@ -470,24 +510,29 @@ ordered so each builds on the previous (foundations → behavior → cross-cutti
   transition; enforce ownership."
 - **File:** `src/api/cards.{ext}` + `src/services/status.{ext}` · **Symbol:** `set_frozen`
 - **Details:** Idempotent (freezing a frozen card is a no-op success, **not** a second audit
-  event). Forbidden for non-owners (`403`).
-- **DoD:** `active→frozen→active` audited twice; freezing twice audited once; non-owner `403`.
+  event). Non-owners → `404` (no existence leak; see Catalog *Mapping rules*).
+- **DoD:** `active→frozen→active` audited twice; freezing twice audited once; non-owner → `404`.
 
 ### 9. Set / adjust spending limits  → M3
-- **Prompt:** "Implement `PUT /cards/{id}/limits` to set per-transaction and rolling limits with
-  currency match and non-negative validation; audit old→new."
+- **Prompt:** "Implement `PUT /cards/{id}/limits` (full replace) setting per-transaction and rolling
+  limits with non-negative validation; audit old→new."
 - **File:** `src/api/cards.{ext}` + `src/services/limits.{ext}` · **Symbol:** `set_limits`
-- **Details:** Reject currency mismatch and negative/oversized values (`400`). Setting a limit to
-  `null` (unlimited) is allowed but **explicitly audited** as a risk-relevant change.
-- **DoD:** Negative limit `400`; currency mismatch `400`; audit shows before/after; concurrent
-  change with stale `version` → `409`.
+- **Details:** **PUT replaces the whole limit set** — both `per_txn_limit_minor` and `rolling_window`
+  are sent (each may be `null` = explicit, audited "unlimited"). An optional `currency` field, if
+  present, must equal the card's (else `400 currency_mismatch`). A limit change is a **versioned,
+  audited state change** (bumps `version`, writes `limit.changed`) and is rejected on a terminated
+  card with `422 invalid_transition`. Reject negative/oversized values with `400 validation_error`.
+- **DoD:** Negative/oversized → `400`; currency mismatch → `400`; on terminated → `422`; audit shows
+  before→after; concurrent change with stale `version` → `409`.
 
 ### 10. Authorization evaluation (pure)  → M7
 - **Prompt:** "Implement `evaluate(card_snapshot, candidate_txn, window_usage) → Decision`
   returning approve/decline + machine reason, as a pure function."
 - **File:** `src/domain/authorize.{ext}` · **Symbol:** `evaluate`
 - **Details:** Implement exactly the *Authorization decision logic (precedence)* — the ordered
-  checks and the strict-`>` boundary rule — returning a `Decision`. No I/O; fail closed on missing input.
+  checks, strict-`>` boundary, and *Rolling window semantics* — returning a `Decision`. `evaluate`
+  does **no I/O**; the orchestrating service supplies `window_usage` from the `integrations/stream`
+  client and fails closed (`evaluation_unavailable`) if it cannot be fetched.
 - **DoD:** Pure and deterministic; unit tests for each decline reason **in precedence order** + an
   approval + the exact boundary (`amount == limit` approves, `amount == limit+1` declines).
 
@@ -498,10 +543,11 @@ ordered so each builds on the previous (foundations → behavior → cross-cutti
 - **File:** `src/api/cards.{ext}` + `src/api/transactions.{ext}` + `src/services/txn_view.{ext}` ·
   **Symbol:** `get_card`, `list_txns`
 - **Details:** `GET /cards/{id}` returns the card (token + `last4`, no PAN), strongly consistent with
-  the owner's own writes. Transactions use cursor pagination (opaque cursor, default page 50, max
-  100); stable ordering `(at desc, txn_id desc)`; reflect the stream's eventual consistency (see Performance).
-- **DoD:** `GET /cards/{id}` returns the owner's card and `403`/`404` for others (no existence leak);
-  pagination returns no dupes/gaps across pages; empty card → empty list, not error.
+  the owner's own writes. Transactions are read via the `integrations/stream` client and returned per
+  the API Contract's **Pagination** rules (opaque cursor, default 50, max 100, `(at desc, txn_id
+  desc)`); reflect the stream's eventual consistency (see Performance).
+- **DoD:** `GET /cards/{id}` returns the owner's card and `404` for others (no existence leak);
+  pagination returns no dupes/gaps across pages; empty card → empty `items`, not error.
 
 ### 12. Ops/compliance read view  → M6
 - **Prompt:** "Add an `ops`-only `GET /ops/cards/{id}` returning the card + full audit trail,
@@ -521,15 +567,20 @@ ordered so each builds on the previous (foundations → behavior → cross-cutti
 
 ### 14. Error envelope & exception mapping  → cross-cutting
 - **Prompt:** "Centralize the `{error, message, details, requestId}` envelope and map typed
-  domain errors to the HTTP codes in Implementation Notes."
-- **File:** `src/platform/errors.{ext}` · **Symbol:** `error_envelope`
+  domain errors to the HTTP codes in the Error Code Catalog."
+- **File:** `src/platform/errors.{ext}` (HTTP mapping) — error *classes* live in `src/domain/errors`
+  so `domain`/`repo` raise them without importing `platform` · **Symbol:** `error_envelope`
+- **Details:** Apply the Catalog's *Mapping rules*: owner-mismatch/unknown → `404`; role-only →
+  `403`; all body/query validation → `400 validation_error` (remap the framework's default `422`).
 - **DoD:** Every documented error path returns the envelope with a stable machine `error` code;
-  no stack traces leak; `requestId` present on all responses.
+  framework validation surfaces as `400`, not `422`; no stack traces leak; `requestId` on all responses.
 
 ### 15. Rate limiting & request id  → NFR (security/perf)
 - **Prompt:** "Add per-owner rate limiting and an `X-Request-ID` on every response."
 - **File:** `src/platform/middleware.{ext}` · **Symbol:** `rate_limit`, `request_id`
-- **Details:** Default (assumed) 100 req/min/owner; `429` with envelope on breach.
+- **Details:** Default (assumed) 100 req/min/owner; `429` with envelope on breach. The per-owner
+  limiter runs **after** the principal is resolved (in the auth dependency, not as raw middleware,
+  which cannot see the owner); `X-Request-ID` is true middleware on every response.
 - **DoD:** 101st request in a minute → `429`; every response carries `X-Request-ID`.
 
 ### 16. Notifications on lifecycle events  → M2, M3 (supporting)
@@ -569,7 +620,7 @@ the audit/compliance implication where relevant.
 | E7 | Authorize a spend on a frozen card | Decline `card_frozen`; decision is deterministic and explainable; no state change |
 | E8 | Spend exactly at the per-txn limit vs one minor unit over | `amount == limit` → approve; `amount == limit + 1` → decline `limit_exceeded` (boundary defined, not implementation-dependent) |
 | E9 | Rolling-window limit: usage stale vs. fresh | Evaluation uses the latest window usage; if usage cannot be fetched, **fail closed** → decline `evaluation_unavailable` |
-| E10 | User A reads/acts on User B's card | `403`/`404` with **no existence disclosure**; attempt is logged (security event) |
+| E10 | User A reads/acts on User B's card | `404` (never `403`) — **no existence disclosure**; attempt is logged (security event) |
 | E11 | Ops reads a user's card | Allowed; the access itself is audited (`ops.viewed`) for access transparency |
 | E12 | Terminate, then freeze/limit/authorize | `422 invalid_transition` for freeze/limit; authorize declines `card_terminated`; terminate is idempotent |
 | E13 | Empty transaction list / new card | `200` with empty page (not `404`); stable empty cursor |
@@ -577,6 +628,10 @@ the audit/compliance implication where relevant.
 | E15 | Suspected fraud pattern (rapid repeated declines / velocity) | Out of scope to *decide* fraud, but each decline is audited with reason so an external fraud system can act; document the hook |
 | E16 | Notification service down during freeze | Freeze + audit succeed; notification retried/queued; failure never rolls back the state change |
 | E17 | Clock skew / duplicate timestamps | Server UTC is authoritative; ties broken by `txn_id`/`seq` so ordering is total |
+
+The **operational/security log** referenced by E4 and E10 is separate from the immutable audit chain
+and carries **no PII**; its sink and schema are out of scope for this feature (the audit chain is the
+system of record). The fraud hook (E15) is likewise expose-only.
 
 ---
 

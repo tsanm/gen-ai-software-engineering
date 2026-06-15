@@ -21,8 +21,9 @@ High-blast-radius and non-default; `agents.md` §2/§6 carry the full versions.
 - **`evaluate()` (authorization) stays pure** — no I/O, deterministic, replay-safe.
 - **Every mutation is idempotent (`Idempotency-Key`) and audited in the same transaction** — a
   replay creates no second state change and no duplicate audit event.
-- **Default-deny.** Verify JWT; enforce ownership + role on every endpoint; never disclose others'
-  cards (`403`/`404`); an ops read of another user's card is itself audited.
+- **Default-deny.** Verify the principal; enforce ownership + role on every endpoint; another user's
+  card → `404` (never `403`, no existence leak), `403` only for role failures; an ops read of another
+  user's card is itself audited.
 
 ## Non-inferable conventions
 Generic style is enforced by the gate below; these are the domain rules an agent gets wrong by default.
