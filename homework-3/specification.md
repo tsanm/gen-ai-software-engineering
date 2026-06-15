@@ -5,7 +5,34 @@
 > Policy**, **Implementation Notes**, **Edge Cases**, **Verification**, and **Performance**
 > sections as binding acceptance constraints, not background reading. Every low-level task
 > names the mid-level objective it serves (e.g. `→ M3`); do not implement a task in a way
-> that violates a constraint from another section.
+> that violates a constraint from another section. Agent behaviour, autonomy boundaries
+> (always / ask-first / never), and the runnable quality gate live in [`agents.md`](agents.md);
+> the always-loaded rule subset is in [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
+
+---
+
+**Status:** Draft for implementation · **Version:** 1.1 · **Last updated:** 2026-06-16 ·
+**Owner:** Card Platform team. Change-controlled in Git; any material change updates this header
+and the affected section.
+
+### Contents
+[Authority & sources of truth](#authority--sources-of-truth) · [High-Level Objective](#high-level-objective) ·
+[Mid-Level Objectives](#mid-level-objectives) · [Non-Functional & Policy](#non-functional--policy) ·
+[Implementation Notes](#implementation-notes-guardrails-an-agent-must-not-violate) ·
+[Assumptions](#assumptions) · [Architecture & Key Flows](#architecture--key-flows) ·
+[Domain Model](#domain-model) · [API Contract](#api-contract-authoritative-surface) ·
+[Worked Example](#worked-example) · [Context](#context) · [Low-Level Tasks](#low-level-tasks) ·
+[Edge Cases](#edge-cases--failure-modes) · [Verification](#verification) ·
+[Expected Performance](#expected-performance) ·
+[Traceability Matrix](#traceability-matrix-goals--tasks--verification)
+
+### Authority & sources of truth
+This spec is **authoritative and closed-world**: do **not** introduce endpoints, fields, status
+values, error codes, dependencies, or libraries beyond those defined here. The *Error Code Catalog*,
+*Domain Model*, and *API Contract* are the single sources of truth for their surfaces. If a needed
+detail is missing or two sections conflict, **stop and ask** — never guess in a money or compliance
+path. *How* the agent works (ask-don't-guess, dependency order, traceability, verification) lives in
+[`agents.md`](agents.md); the always-loaded rule subset is in [`.claude/CLAUDE.md`](.claude/CLAUDE.md).
 
 ---
 
@@ -144,6 +171,197 @@ and `evaluation_unavailable` (fail-closed when an input is missing). *(→ Task 
 
 ---
 
+## Assumptions
+
+Stated explicitly so the agent does not silently infer them; if reality differs, the affected
+constraint must be revisited (record any deviation in `ASSUMPTIONS.md`).
+- **Upstream KYC/AML has already cleared** the account before issuance — this feature records, but
+  does not perform, KYC.
+- **The external services in *Beginning context* exist and are reachable** (PAN vault, ledger /
+  transaction stream, notifications, audit store, identity) and are injected + mockable.
+- **JWTs are trustworthy and already verified** by the identity layer; `401 unauthenticated` is
+  handled upstream, not by this feature.
+- **All values marked *(assumed target)*** (SLOs, freshness, rate limits) are hypothetical defaults
+  to confirm against real SLOs before launch.
+- **A card has one fixed currency** for its lifetime; multi-currency cards are out of scope.
+- **The single card aggregate is the consistency boundary**; portfolio / cross-card operations are
+  out of scope.
+
+---
+
+## Architecture & Key Flows
+
+Stateless service, four layers, dependencies pointing inward; `domain/` is pure (no I/O).
+
+| Layer | Responsibility | Depends on |
+|-------|----------------|-----------|
+| `api` | HTTP handlers; authN/Z guard; idempotency; error envelope; rate limit; `X-Request-ID` | `services` |
+| `services` | Use-case orchestration in **one transaction** (issue, status, limits, txn view) | `domain`, `repo`, `integrations`, `platform` |
+| `domain` | Pure rules — `VirtualCard`, `transition()`, `evaluate()`; deterministic, no I/O | — |
+| `repo` / `integrations` | Card store (optimistic CAS); vault, ledger/stream, notify, audit | external services |
+
+**Ordering invariants — must hold in every flow:**
+- **Issue (M1):** validate → idempotency check → vault issue (**fail closed: vault down → `503`, no
+  card row, no audit**) → persist card **and** append audit **atomically** → best-effort notify → `201`.
+- **State change (M2/M3/M5):** ownership/role → load (capture `version`) → pure `transition()` /
+  validate → CAS write (stale `version` → `409`) → audit **in the same transaction** → best-effort
+  notify. An idempotent replay returns the original result and writes **no** second audit event.
+- **Authorize (M7):** load snapshot + window usage → pure `evaluate()` → `200` carrying
+  approve/decline + reason; the decision is **never** persisted to card state.
+- **Always:** no state change without its audit record; notifications are best-effort and never roll
+  back a committed state change.
+
+---
+
+## Domain Model
+
+### Entities (authoritative — field types & invariants are binding)
+Types are language-neutral (map to the stack in `agents.md`). Money is integer **minor units**;
+a `null` limit is an explicit, audited "unlimited". **No PAN/CVV field exists on any entity.**
+
+**VirtualCard** — the aggregate and the consistency boundary:
+
+| Field | Type | Constraint / invariant |
+|-------|------|------------------------|
+| `card_id` | UUIDv4 | server-generated, immutable, primary key |
+| `owner_id` | string (opaque) | from JWT `sub`; immutable |
+| `card_token` | string | opaque vault reference — **never** a PAN |
+| `last4` | string(4) | digits only; display use only |
+| `currency` | ISO-4217 | immutable for the card's life |
+| `status` | `CardStatus` | `active` \| `frozen` \| `terminated`; changes **only** via `transition()` |
+| `per_txn_limit_minor` | int ≥ 0 \| null | card currency; null = unlimited |
+| `rolling_window` | {`amount_minor` int ≥ 0, `period` `DAY`\|`WEEK`\|`MONTH`} \| null | null = unlimited |
+| `version` | int ≥ 1 | optimistic-concurrency token; +1 per committed state change |
+| `created_at`,`updated_at` | UTC ISO-8601 | server is clock of record |
+| `terminated_at` | UTC ISO-8601 \| null | set once, on terminate |
+
+**TransactionView** — read model projected from the external stream; this feature never writes it:
+`txn_id` (pk) · `card_id` · `amount_minor` (int) · `currency` · `merchant` · `status`
+(`pending`\|`posted`\|`declined`\|`reversed`) · `at` (UTC).
+
+**AuditEvent** — append-only, hash-chained, one per state change; no PAN/CVV/PII:
+`seq` (monotonic) · `prev_hash`/`hash` · `actor` {`role`,`id`} · `action`
+(`card.issued`\|`card.frozen`\|`card.unfrozen`\|`limit.changed`\|`card.terminated`\|`ops.viewed`) ·
+`card_id` · `changes` (before/after of changed fields only) · `request_id` · `idempotency_key?` · `at`.
+
+**Decision** — output of `evaluate`: `{ approved: bool, reason: ReasonCode|null }`,
+`ReasonCode ∈ {card_frozen, card_terminated, limit_exceeded, rolling_limit_exceeded, currency_mismatch, evaluation_unavailable}`.
+
+### Core signatures (binding contracts)
+- `transition(card, event) -> (CardStatus, ChangeRecord)` — pure; raises `invalid_transition` for any
+  pair not in the transition table.
+- `evaluate(snapshot, candidate_txn, window_usage_minor | None) -> Decision` — pure, deterministic, no I/O.
+- `CardRepository`: `get(card_id)`, `put(card, expected_version)` (raises `version_conflict` on stale),
+  `list_by_owner(owner_id, cursor, limit) -> Page`.
+- `AuditLog`: `append(event) -> AuditEvent`, `verify_chain() -> bool`.
+- `VaultClient`: `issue(currency) -> {card_token, last4}` — may raise `dependency_down`.
+
+### Card status enum & lifecycle
+`active`, `frozen`, `terminated`. Terminal: `terminated`.
+
+```mermaid
+stateDiagram-v2
+    [*] --> active: issue (M1)
+    active --> frozen: freeze (M2)
+    frozen --> active: unfreeze (M2)
+    active --> terminated: terminate (M5)
+    frozen --> terminated: terminate (M5)
+    terminated --> [*]
+    note right of terminated
+      Terminal. No transition out.
+      Authorization always declines.
+    end note
+```
+
+### State transition table (authoritative)
+`transition(card, event)` permits **exactly** these; any other pair → `invalid_transition` (`422`)
+with no state mutation. Each permitted transition bumps `version` and writes one audit event.
+
+| From ↓ \ Event → | freeze | unfreeze | terminate |
+|------------------|--------|----------|-----------|
+| **active** | → frozen | no-op¹ | → terminated |
+| **frozen** | no-op¹ | → active | → terminated |
+| **terminated** | reject | reject | no-op¹ |
+
+¹ Idempotent no-op: returns success with **no** `version` bump and **no** new audit event.
+(`issue` creates the card in `active`; it is not a transition on an existing card.)
+
+### Authorization decision logic (precedence — `evaluate`, M7)
+Authorization is a function of `status` + limits + currency, with rolling-window usage read from the
+external stream — never of the card row's own state. `evaluate` checks in this **exact order** and
+returns on the **first** match (so the outcome is deterministic and explainable):
+
+1. any required input missing (e.g. `window_usage is None`) → decline `evaluation_unavailable` *(fail closed)*
+2. `status == terminated` → decline `card_terminated`
+3. `status == frozen` → decline `card_frozen`
+4. `txn.currency != card.currency` → decline `currency_mismatch`
+5. `per_txn_limit != null` and `txn.amount_minor > per_txn_limit` → decline `limit_exceeded`
+6. `rolling != null` and `window_usage + txn.amount_minor > rolling.amount_minor` → decline `rolling_limit_exceeded`
+7. otherwise → **approve**
+
+Comparisons are strict (`>`): `amount == limit` **approves**; `amount == limit + 1` declines (E8).
+
+---
+
+## API Contract (authoritative surface)
+
+These are the **only** endpoints. All require a verified JWT and enforce ownership; all mutations
+require an `Idempotency-Key`. HTTP/codes per the *Error Code Catalog*; every response carries
+`X-Request-ID`. `{id}` is a `card_id` (UUIDv4); `403`/`404` never disclose others' cards.
+
+| Method & path | Role | Mutates | Success | Primary error codes | Task |
+|---------------|------|---------|---------|---------------------|------|
+| `POST /cards` | user | yes | `201` card | `validation_error`, `dependency_down` | 7 |
+| `GET /cards/{id}` | owner | no | `200` card | `forbidden`/`not_found` | 11 |
+| `POST /cards/{id}/freeze` | owner | yes | `200` card | `forbidden`/`not_found`, `invalid_transition` | 8 |
+| `POST /cards/{id}/unfreeze` | owner | yes | `200` card | `forbidden`/`not_found`, `invalid_transition` | 8 |
+| `PUT /cards/{id}/limits` | owner | yes | `200` card | `validation_error`, `currency_mismatch`, `version_conflict`, `invalid_transition` | 9 |
+| `POST /cards/{id}/terminate` | owner or ops | yes | `200` card | `forbidden`/`not_found`, `invalid_transition` | 13 |
+| `GET /cards/{id}/transactions` | owner | no | `200` page | `forbidden`/`not_found`, `validation_error` | 11 |
+| `GET /ops/cards/{id}` | ops | no (audits read) | `200` card + audit chain | `forbidden` | 12 |
+
+List endpoints use opaque **cursor** pagination (default 50, max 100), newest-first
+`(at desc, txn_id desc)`. **Authorization (M7)** is an internal **pure evaluation** (`evaluate`)
+invoked by the payment path — not a user-facing REST endpoint in this feature's scope.
+
+---
+
+## Worked Example
+
+Concrete instances that fix the contract — a real example beats prose. Values are illustrative and
+IDs/tokens are fake. Note that responses carry `card_token` + `last4`, **never** a PAN, and money is
+integer minor units.
+
+**Issue a card** — `POST /cards` → `201 Created`:
+```http
+POST /cards   Authorization: Bearer <jwt: sub=owner_42, role=user>   Idempotency-Key: 0d1c…e9
+
+{ "currency": "USD", "per_txn_limit_minor": 50000,
+  "rolling_window": { "amount_minor": 200000, "period": "MONTH" } }
+```
+```json
+{ "card_id": "8f3b…", "owner_id": "owner_42", "card_token": "tok_live_…", "last4": "4242",
+  "currency": "USD", "status": "active", "per_txn_limit_minor": 50000,
+  "rolling_window": { "amount_minor": 200000, "period": "MONTH" },
+  "version": 1, "created_at": "2026-06-16T12:00:00Z" }
+```
+
+**Authorization** — `evaluate(card_snapshot, candidate_txn, window_usage) → Decision` (pure; M7):
+```jsonc
+{ "approved": true,  "reason": null }                     // 45000 ≤ per-txn 50000, within window
+{ "approved": false, "reason": "limit_exceeded" }         // boundary: amount 50001 == limit 50000 + 1
+{ "approved": false, "reason": "evaluation_unavailable" } // fail-closed: window usage unfetchable
+```
+
+**Error envelope** — every **HTTP error** path uses this shape; `error` is a code from the *Error
+Code Catalog* (here, freezing a terminated card → `422 invalid_transition`). Note this is distinct
+from an authorization *decline*, which is a `200` carrying a `Decision` reason like `card_frozen`:
+```json
+{ "error": "invalid_transition", "message": "Cannot freeze a terminated card.", "details": [], "requestId": "5e2a…" }
+```
+
+---
+
 ## Context
 
 ### Beginning context (exists before work starts — hypothetical but fixed)
@@ -166,40 +384,20 @@ and `evaluation_unavailable` (fail-closed when an input is missing). *(→ Task 
 - Operational docs: runbook for the authorization fail-closed behavior, and a reconciliation
   procedure against the external ledger.
 
----
+### Module layout (target)
+Consolidates the per-task `File:` targets so structure lives in one place (layering: deps inward,
+`domain/` free of framework/I/O):
 
-## Domain Model
-
-### Entities (fields are illustrative; types per Implementation Notes)
-- **VirtualCard**: `card_id` (UUID), `owner_id`, `card_token`, `last4`, `currency`, `status`,
-  `per_txn_limit_minor`, `rolling_window` `{amount_minor, period}`, `version`, `created_at`,
-  `updated_at`, `terminated_at?`.
-- **Limit**: embedded in the card — a `per_transaction` cap and a `rolling` cap
-  `{amount_minor, period: DAY|WEEK|MONTH}`. Null = unlimited (must be an explicit, audited choice).
-- **TransactionView** (read-model projected from the external stream): `txn_id`, `card_id`,
-  `amount_minor`, `currency`, `merchant`, `status` (`pending|posted|declined|reversed`), `at`.
-- **AuditEvent**: `seq`, `prev_hash`, `hash`, `actor`, `action`, `card_id`, `changes`,
-  `request_id`, `idempotency_key?`, `at`.
-
-### Card status enum & lifecycle
-`active`, `frozen`, `terminated`. Terminal: `terminated`.
-
-```mermaid
-stateDiagram-v2
-    [*] --> active: issue (M1)
-    active --> frozen: freeze (M2)
-    frozen --> active: unfreeze (M2)
-    active --> terminated: terminate (M5)
-    frozen --> terminated: terminate (M5)
-    terminated --> [*]
-    note right of terminated
-      Terminal. No transition out.
-      Authorization always declines.
-    end note
+```text
+src/
+  api/          # thin handlers: cards, transactions, ops      (Tasks 7,8,9,11,12)
+  services/     # issue, status, limits, txn_view              (Tasks 7,8,9,11,13)
+  domain/       # card, lifecycle, authorize — no framework/IO (Tasks 1,2,10)
+  repo/         # card_repo (optimistic concurrency)           (Task 3)
+  integrations/ # vault, notify                                (Tasks 4,16)
+  platform/     # idempotency, audit, errors, middleware       (Tasks 5,6,14,15)
+tests/          # unit · integration · e2e · compliance        (Tasks 17–20)
 ```
-
-Authorization decisions (M7) are a function of `status` + limits, evaluated against the
-external transaction stream for rolling-window usage — never a state of the card row itself.
 
 ---
 
@@ -219,10 +417,11 @@ ordered so each builds on the previous (foundations → behavior → cross-cutti
   rejected; `version` starts at 1.
 
 ### 2. Guarded state-machine transition function  → M5
-- **Prompt:** "Implement a single `transition(card, event)` that allows only the Domain Model
-  transitions and raises `invalid_transition` otherwise."
+- **Prompt:** "Implement a single `transition(card, event)` that allows only the moves in the
+  *State transition table* and raises `invalid_transition` otherwise."
 - **File:** `src/domain/lifecycle.{ext}` · **Symbol:** `transition`
-- **Details:** Pure function; returns a new status + the change record for audit. No I/O.
+- **Details:** Pure function; returns the new status + the change record for audit. No I/O. Behaviour
+  is exactly the *State transition table* (incl. idempotent no-ops).
 - **DoD:** `terminated → active` raises `invalid_transition`; `active → frozen → active` works;
   unit tests cover every legal and at least 3 illegal transitions.
 
@@ -287,21 +486,22 @@ ordered so each builds on the previous (foundations → behavior → cross-cutti
 - **Prompt:** "Implement `evaluate(card_snapshot, candidate_txn, window_usage) → Decision`
   returning approve/decline + machine reason, as a pure function."
 - **File:** `src/domain/authorize.{ext}` · **Symbol:** `evaluate`
-- **Details:** Decline if `status != active` (`card_frozen`/`card_terminated`), if
-  `amount > per_txn_limit` (`limit_exceeded`), if `window_usage + amount > rolling_limit`
-  (`rolling_limit_exceeded`), or currency mismatch (`currency_mismatch`). Approve otherwise.
-  **Fail closed**: any missing input → decline with `evaluation_unavailable`.
-- **DoD:** Pure (no I/O); deterministic; unit tests for each decline reason + approval + the
-  exact boundary (`amount == limit` approves, `amount == limit+1` declines).
+- **Details:** Implement exactly the *Authorization decision logic (precedence)* — the ordered
+  checks and the strict-`>` boundary rule — returning a `Decision`. No I/O; fail closed on missing input.
+- **DoD:** Pure and deterministic; unit tests for each decline reason **in precedence order** + an
+  approval + the exact boundary (`amount == limit` approves, `amount == limit+1` declines).
 
-### 11. Transaction read-model & listing  → M4
-- **Prompt:** "Implement `GET /cards/{id}/transactions` projecting the external stream into a
-  newest-first, cursor-paginated, owner-scoped list with optional `status` filter."
-- **File:** `src/api/transactions.{ext}` + `src/services/txn_view.{ext}` · **Symbol:** `list_txns`
-- **Details:** Cursor pagination (opaque cursor, default page 50, max 100); stable ordering by
-  `(at desc, txn_id desc)`. Reflect the external stream's eventual consistency (see Performance).
-- **DoD:** Pagination returns no dupes/gaps across pages; another user's card → `403`/`404`
-  (no existence leak); empty card → empty list, not error.
+### 11. Card & transaction read endpoints  → M4
+- **Prompt:** "Implement owner-scoped reads: `GET /cards/{id}` (the card) and
+  `GET /cards/{id}/transactions` projecting the external stream into a newest-first,
+  cursor-paginated list with optional `status` filter."
+- **File:** `src/api/cards.{ext}` + `src/api/transactions.{ext}` + `src/services/txn_view.{ext}` ·
+  **Symbol:** `get_card`, `list_txns`
+- **Details:** `GET /cards/{id}` returns the card (token + `last4`, no PAN), strongly consistent with
+  the owner's own writes. Transactions use cursor pagination (opaque cursor, default page 50, max
+  100); stable ordering `(at desc, txn_id desc)`; reflect the stream's eventual consistency (see Performance).
+- **DoD:** `GET /cards/{id}` returns the owner's card and `403`/`404` for others (no existence leak);
+  pagination returns no dupes/gaps across pages; empty card → empty list, not error.
 
 ### 12. Ops/compliance read view  → M6
 - **Prompt:** "Add an `ops`-only `GET /ops/cards/{id}` returning the card + full audit trail,

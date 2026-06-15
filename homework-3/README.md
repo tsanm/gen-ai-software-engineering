@@ -15,10 +15,44 @@ the spec's depth, its traceability from goals to tasks, and the rationale below 
 
 | File | Purpose |
 |------|---------|
-| [`specification.md`](specification.md) | The layered spec: High-level → Mid-level (M1–M7) → Non-functional & policy → Implementation notes → Context → 20 low-level tasks, plus integrated **Edge Cases**, **Verification**, **Performance**, and a **Traceability Matrix**. |
-| [`agents.md`](agents.md) | AI coding-partner manual: stack, banking domain rules, code style, testing/verification expectations, security/compliance hard rules, edge-case defaults. |
+| [`specification.md`](specification.md) | The layered spec (versioned, with a TOC + a closed-world **How-to-execute** contract): High-level → Mid-level (M1–M7) → Non-functional & policy → Implementation notes → **Assumptions** → Context (+ target **module layout**) → **Architecture & Key Flows** (layer contracts + ordering invariants) → **Domain Model** (authoritative typed entities, **binding signatures**, **state-transition table**, **ordered authorization-decision logic**) → **API Contract** (the only endpoints) → **Worked Example** (concrete request/response, decisions, error envelope) → 20 low-level tasks, plus integrated **Edge Cases**, **Verification**, **Performance**, and a **Traceability Matrix**. |
+| [`agents.md`](agents.md) | AI **operating contract**: tech stack, the quality gate, the explore→plan→implement + TDD workflow, behavioral non-negotiables, and what the agent must never do — references the spec for exact codes/numbers rather than duplicating them. |
 | [`.claude/CLAUDE.md`](.claude/CLAUDE.md) | Claude Code rules file — concise, imperative "how to work" steering (FinTech golden rules, naming/patterns, DoD, what to avoid). |
 | `README.md` | This file: rationale + industry best practices with section references. |
+
+## Documentation architecture — one source of truth per concern
+
+Production AI assistants drift when the same rule is copied across files and the copies fall out of
+sync. This package therefore assigns each concern a **single source of truth (SSOT)** and has the
+others *reference* it rather than restate it:
+
+- **`specification.md` — the *what*** and the authoritative numbers, codes, and tables (objectives,
+  20 tasks, **Error Code Catalog**, SLOs, edge cases, traceability). Everything defers to it; on
+  conflict, the spec wins.
+- **`agents.md` — the *agent operating contract*:** tech stack, the quality gate, the
+  explore→plan→implement + TDD workflow, and ambiguity handling — the things the spec does not
+  cover. It states behavioral non-negotiables but points to the spec for their exact codes/numbers,
+  so no catalog is maintained twice.
+- **`.claude/CLAUDE.md` — the always-loaded subset:** because Claude reads it *every* session, it is
+  kept deliberately thin — only the high-blast-radius FinTech guardrails, the runnable done-gate,
+  and pointers. Anthropic's own guidance is that a bloated `CLAUDE.md` causes Claude to ignore
+  instructions, so signal-to-noise is treated as a design constraint, not an afterthought.
+
+**Cross-tool by design.** `agents.md` follows the emerging vendor-neutral **`AGENTS.md` convention**,
+so the agent contract is not locked to a single tool. `.claude/CLAUDE.md` is just the Claude-specific
+thin layer that points to it; were Cursor or Copilot rules ever added, they would be equally thin
+pointers — **one canonical contract, never a per-tool copy.** That deliberately avoids the
+"markdown museum" anti-pattern where each tool gets its own drifting rules file.
+
+This mirrors how I would structure docs for a real regulated codebase: requirements in the spec,
+agent behavior in `agents.md`, a lean always-on rules file — and **no rule living in two places**.
+
+> **Why two files and not one symlink?** In a pure production repo the common shortcut is a single
+> `AGENTS.md` with `CLAUDE.md` symlinked to it (Claude Code reads `CLAUDE.md`, not `AGENTS.md`). This
+> homework grades the agent manual and the editor-rules file as **separate deliverables**, so I keep
+> both — but split by *role* rather than duplicating: `agents.md` is the full contract, `CLAUDE.md`
+> its always-loaded subset. (In a live repo `CLAUDE.md` would sit at the project root to auto-load;
+> it is under `.claude/` here to match the deliverable layout.)
 
 ## Rationale — why the spec is written this way
 
@@ -91,12 +125,19 @@ and the issuance task.
 | **Access transparency** (auditing privileged/ops reads) | `specification.md` → *Task 12*; *Edge E11* |
 | **Reconciliation against source-of-truth ledger** | `specification.md` → *Task 20*; *Verification (M4)* |
 | **Quality gate for any implementation** (ruff/mypy/bandit/radon/coverage) | `agents.md` §1, §4; `.claude/CLAUDE.md` Definition of done |
+| **Agent autonomy boundaries** (autonomous vs. approval-gated actions; secrets documented, never embedded) | `agents.md` §5 |
+| **Concrete worked example** (real request/response, decision objects, error envelope — "a real example beats prose") | `specification.md` → *Worked Example* |
+| **Explicit assumptions** (stated, not silently inferred) | `specification.md` → *Assumptions*; agents.md §3 (`ASSUMPTIONS.md`) |
+| **Versioned, navigable spec** (status/version header + table of contents) | `specification.md` → header + *Contents* |
+| **Closed-world / anti-hallucination contract** (don't invent endpoints, fields, or codes; ask-don't-guess; single sources of truth) | `specification.md` → *How to execute this spec* |
+| **Exact contracts for deterministic execution** (typed domain model, binding function signatures, full API surface, ordered decision precedence + strict boundary) | `specification.md` → *Domain Model*, *API Contract*, *Authorization decision logic* |
 
 ## AI usage & screenshots
 
-This is a **specification-only** homework (no app to run), so the screenshots evidence the
-**AI-assisted process** that produced the spec and that the documents render correctly. They live
-in [`docs/screenshots/`](docs/screenshots/) (see that folder's `README.md` for the capture list):
+This is a **specification-only** homework (no app to run), so the evidence is the **AI-assisted
+process** that produced the spec plus a render proving the documents display correctly. Capture the
+images below into [`docs/screenshots/`](docs/screenshots/) using the exact filenames — that folder's
+`README.md` holds the capture guide and tracks each item's status:
 
 | Screenshot | Shows |
 |------------|-------|
