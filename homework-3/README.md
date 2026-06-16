@@ -145,17 +145,18 @@ The throwaway implementation was then discarded — this remains a **spec-only**
 
 ## AI usage & screenshots
 
-This is a **specification-only** homework (no app to run), so the evidence is the **AI-assisted
-process** that produced the spec plus a render proving the documents display correctly. Capture the
-images below into [`docs/screenshots/`](docs/screenshots/) using the exact filenames — that folder's
-`README.md` holds the capture guide and tracks each item's status:
+This is a **specification-only** homework (no app to run), so the screenshots evidence the
+**AI-assisted process** that produced the package — from best-practice research through to the
+cold-agent validation. They live in [`docs/screenshots/`](docs/screenshots/):
 
-| Screenshot | Shows |
-|------------|-------|
-| `ai_spec_design.png` | AI session designing the layered spec (objectives M1–M7 → 20 low-level tasks). |
-| `ai_agents_rules.png` | Authoring `agents.md` / `.claude/CLAUDE.md` — the FinTech guardrails. |
-| `spec_state_machine.png` | The rendered card-lifecycle Mermaid state diagram from `specification.md`. |
-| `spec_traceability.png` | The rendered Traceability Matrix (goals → tasks → edge cases → verification). |
+| # | Screenshot | What it shows |
+|---|------------|---------------|
+| 1 | [`01-research-claude-md.png`](docs/screenshots/01-research-claude-md.png) | Exploring homework-3 and gathering `CLAUDE.md` best-practice sources before authoring the rules. |
+| 2 | [`02-spec-bestpractice-audit.png`](docs/screenshots/02-spec-bestpractice-audit.png) | Auditing the spec against P0/P1 best practices (course template + O'Reilly / GitHub guidance). |
+| 3 | [`03-spec-architecting.png`](docs/screenshots/03-spec-architecting.png) | Applying the architect-grade, dense upgrades to `specification.md` (closed-world contract, typed contracts, TOC). |
+| 4 | [`04-doc-architecture.png`](docs/screenshots/04-doc-architecture.png) | Deciding the `agents.md` vs `.claude/CLAUDE.md` split and wiring the single-source-of-truth doc architecture. |
+| 5 | [`05-execution-rules-template-align.png`](docs/screenshots/05-execution-rules-template-align.png) | Relocating the execution rules and aligning the spec to the course template. |
+| 6 | [`06-cold-agent-validation.png`](docs/screenshots/06-cold-agent-validation.png) | The cold-context agent implementing the spec end-to-end — **88 tests passing, 97.86% coverage, all gates green**. |
 
 ---
 

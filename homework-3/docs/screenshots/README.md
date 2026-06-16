@@ -1,20 +1,15 @@
-# Screenshots — what to capture
+# Screenshots — AI-assisted process
 
-Homework 3 is a **specification-only** deliverable (no runnable app), so the screenshots that
-make sense are of the **AI-assisted process** that produced the spec, plus a render of the
-diagram/matrix that prove the documents render correctly.
+Homework 3 is a **specification-only** deliverable (no runnable app), so these screenshots capture
+the **AI-assisted process** that produced the package — from best-practice research, through
+architecting the spec and the documentation, to the cold-agent validation that proved the spec is
+executable. They are referenced from the project [`README.md`](../../README.md) and the PR.
 
-Drop the images in **this folder** using the **exact filenames** below — the project `README.md`
-and the PR already reference them, so they light up automatically once present.
-
-| Filename | What to capture | Status |
-|----------|-----------------|--------|
-| `ai_spec_design.png` | The AI session designing the layered spec (objectives M1–M7 → low-level tasks). Shows the Context → Model → Prompt workflow. | ⬜ to add |
-| `ai_agents_rules.png` | Authoring `agents.md` / `.claude/CLAUDE.md` (the FinTech guardrails the agent must follow). | ⬜ to add |
-| `spec_state_machine.png` | The rendered Mermaid card-lifecycle state diagram from `specification.md` (e.g. GitHub preview or a Markdown previewer). | ⬜ to add |
-| `spec_traceability.png` | The rendered **Traceability Matrix** table from `specification.md` (goals → tasks → edge cases → verification). | ⬜ to add |
-
-Tips:
-- GitHub renders the Mermaid diagram and tables natively — open `specification.md` on the PR and
-  screenshot from there for `spec_state_machine.png` / `spec_traceability.png`.
-- PNG preferred; any reasonable resolution is fine.
+| # | File | What it shows | Status |
+|---|------|---------------|--------|
+| 1 | `01-research-claude-md.png` | Exploring homework-3 + gathering CLAUDE.md best-practice sources. | ✅ |
+| 2 | `02-spec-bestpractice-audit.png` | Auditing the spec against P0/P1 best practices (template + O'Reilly/GitHub). | ✅ |
+| 3 | `03-spec-architecting.png` | Applying architect-grade contracts to `specification.md` (closed-world, typed contracts, TOC). | ✅ |
+| 4 | `04-doc-architecture.png` | `agents.md` vs `.claude/CLAUDE.md` split + single-source-of-truth doc architecture. | ✅ |
+| 5 | `05-execution-rules-template-align.png` | Execution-rules relocation + course-template alignment. | ✅ |
+| 6 | `06-cold-agent-validation.png` | Cold-context agent implements the spec end-to-end: **88 tests, 97.86% coverage, all gates green**. | ✅ |
