@@ -1,0 +1,2 @@
+# Runtime dependencies for the multi-agent banking pipeline.
+fastmcp>=2.0
