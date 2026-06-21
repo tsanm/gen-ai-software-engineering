@@ -1,0 +1,4 @@
+customer_id,customer_email,customer_name,subject,description,category,priority,status,assigned_to,tags,source,browser,device_type
+CUST-100,alice@example.com,Alice Smith,Cannot reset password,I tried to reset my password but the email never arrives.,account_access,high,new,,"login,password",web_form,Chrome,desktop
+CUST-101,bob@example.com,Bob Jones,Refund not received,I was charged twice and my refund has not arrived yet.,billing_question,medium,new,agent-7,"billing,refund",email,Firefox,mobile
+CUST-102,carol@example.com,Carol White,App crashes on upload,The app crashes every time I try to upload a file.,technical_issue,urgent,new,,crash,chat,Safari,tablet

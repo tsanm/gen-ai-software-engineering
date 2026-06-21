@@ -1,0 +1,24 @@
+[
+  {
+    "customer_id": "CUST-300",
+    "customer_email": "dave@example.com",
+    "customer_name": "Dave Brown",
+    "subject": "Two-factor authentication broken",
+    "description": "I cannot access my account because the 2FA code is never accepted.",
+    "category": "account_access",
+    "priority": "urgent",
+    "tags": ["2fa", "login"],
+    "metadata": {"source": "web_form", "browser": "Edge", "device_type": "desktop"}
+  },
+  {
+    "customer_id": "CUST-301",
+    "customer_email": "erin@example.com",
+    "customer_name": "Erin Green",
+    "subject": "Please add dark mode",
+    "description": "It would be nice to have a dark mode feature for night use.",
+    "category": "feature_request",
+    "priority": "low",
+    "tags": ["enhancement"],
+    "metadata": {"source": "chat", "device_type": "mobile"}
+  }
+]

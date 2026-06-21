@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tickets [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<tickets>
+  <ticket>
+    <customer_id>CUST-500</customer_id>
+    <customer_email>evil@example.com</customer_email>
+    <customer_name>&xxe;</customer_name>
+    <subject>XXE attempt</subject>
+    <description>This file tries to expand an external entity and must be rejected.</description>
+    <metadata>
+      <source>api</source>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+</tickets>

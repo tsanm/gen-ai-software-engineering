@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tickets>
+  <ticket>
+    <customer_id>CUST-400</customer_id>
+    <customer_email>frank@example.com</customer_email>
+    <customer_name>Frank Black</customer_name>
+    <subject>Production down after deploy</subject>
+    <description>This is critical, production is down for the whole team right now.</description>
+    <category>technical_issue</category>
+    <priority>urgent</priority>
+    <tags>
+      <tag>outage</tag>
+      <tag>critical</tag>
+    </tags>
+    <metadata>
+      <source>phone</source>
+      <browser>N/A</browser>
+      <device_type>desktop</device_type>
+    </metadata>
+  </ticket>
+  <ticket>
+    <customer_id>CUST-401</customer_id>
+    <customer_email>grace@example.com</customer_email>
+    <customer_name>Grace Lee</customer_name>
+    <subject>Minor cosmetic issue on profile</subject>
+    <description>There is a small cosmetic alignment issue on the profile page.</description>
+    <category>bug_report</category>
+    <priority>low</priority>
+    <metadata>
+      <source>web_form</source>
+      <device_type>tablet</device_type>
+    </metadata>
+  </ticket>
+</tickets>

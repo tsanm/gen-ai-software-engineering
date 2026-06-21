@@ -1,0 +1,4 @@
+# Local virtualenv + tool caches (repo root .gitignore covers venv/, __pycache__, etc.)
+.venv/
+.pytest_cache/
+.ruff_cache/

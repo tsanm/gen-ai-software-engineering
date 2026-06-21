@@ -1,0 +1,5 @@
+customer_id,customer_email,customer_name,subject,description,source,device_type
+CUST-1,good@example.com,Good,Valid subject,This description is long enough.,web_form,desktop
+CUST-2,not-an-email,Bad Email,Subject ok,This description is long enough.,web_form,desktop
+CUST-3,ok@example.com,Short Desc,Subject ok,too short,web_form,desktop
+CUST-4,ok@example.com,Bad Enum,Subject ok,This description is long enough.,carrier_pigeon,desktop

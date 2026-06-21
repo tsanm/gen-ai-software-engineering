@@ -1,0 +1,376 @@
+[
+  {
+    "customer_id": "CUST-1000",
+    "customer_email": "customer0@example.com",
+    "customer_name": "Customer 0",
+    "subject": "Cannot reset my password",
+    "description": "I requested a password reset but the email with the login link never arrives.",
+    "category": "account_access",
+    "priority": "high",
+    "status": "new",
+    "tags": [
+      "login",
+      "password"
+    ],
+    "metadata": {
+      "source": "web_form",
+      "browser": "Chrome",
+      "device_type": "desktop"
+    }
+  },
+  {
+    "customer_id": "CUST-1001",
+    "customer_email": "customer1@example.com",
+    "customer_name": "Customer 1",
+    "subject": "Locked out - can't access account",
+    "description": "This is critical, I can't access my account and a security alert was shown.",
+    "category": "account_access",
+    "priority": "urgent",
+    "status": "in_progress",
+    "tags": [
+      "login",
+      "security"
+    ],
+    "metadata": {
+      "source": "email",
+      "browser": "Firefox",
+      "device_type": "mobile"
+    }
+  },
+  {
+    "customer_id": "CUST-1002",
+    "customer_email": "customer2@example.com",
+    "customer_name": "Customer 2",
+    "subject": "App crashes on file upload",
+    "description": "The application crashes with an error every time I upload a file. Production down.",
+    "category": "technical_issue",
+    "priority": "urgent",
+    "status": "waiting_customer",
+    "tags": [
+      "crash",
+      "error"
+    ],
+    "metadata": {
+      "source": "api",
+      "browser": "Safari",
+      "device_type": "tablet"
+    }
+  },
+  {
+    "customer_id": "CUST-1003",
+    "customer_email": "customer3@example.com",
+    "customer_name": "Customer 3",
+    "subject": "Page loads slowly",
+    "description": "The dashboard page is not working well and times out occasionally.",
+    "category": "technical_issue",
+    "priority": "medium",
+    "status": "resolved",
+    "tags": [
+      "timeout"
+    ],
+    "metadata": {
+      "source": "chat",
+      "browser": "Edge",
+      "device_type": "desktop"
+    }
+  },
+  {
+    "customer_id": "CUST-1004",
+    "customer_email": "customer4@example.com",
+    "customer_name": "Customer 4",
+    "subject": "Refund for duplicate charge",
+    "description": "I was charged twice on my last invoice and would like a refund for the duplicate.",
+    "category": "billing_question",
+    "priority": "medium",
+    "status": "closed",
+    "tags": [
+      "billing",
+      "refund"
+    ],
+    "metadata": {
+      "source": "phone",
+      "browser": "Chrome",
+      "device_type": "mobile"
+    }
+  },
+  {
+    "customer_id": "CUST-1005",
+    "customer_email": "customer5@example.com",
+    "customer_name": "Customer 5",
+    "subject": "Question about my subscription",
+    "description": "I have a minor question about how my monthly subscription invoice is calculated.",
+    "category": "billing_question",
+    "priority": "low",
+    "status": "new",
+    "tags": [
+      "billing",
+      "subscription"
+    ],
+    "metadata": {
+      "source": "web_form",
+      "browser": "Firefox",
+      "device_type": "tablet"
+    }
+  },
+  {
+    "customer_id": "CUST-1006",
+    "customer_email": "customer6@example.com",
+    "customer_name": "Customer 6",
+    "subject": "Please add dark mode",
+    "description": "Feature request: it would be nice to add a dark mode for comfortable night usage.",
+    "category": "feature_request",
+    "priority": "low",
+    "status": "in_progress",
+    "tags": [
+      "enhancement"
+    ],
+    "metadata": {
+      "source": "email",
+      "browser": "Safari",
+      "device_type": "desktop"
+    }
+  },
+  {
+    "customer_id": "CUST-1007",
+    "customer_email": "customer7@example.com",
+    "customer_name": "Customer 7",
+    "subject": "Defect with steps to reproduce",
+    "description": "Here are the steps to reproduce the defect: open profile, click save, see the error.",
+    "category": "bug_report",
+    "priority": "high",
+    "status": "waiting_customer",
+    "tags": [
+      "bug",
+      "regression"
+    ],
+    "metadata": {
+      "source": "api",
+      "browser": "Edge",
+      "device_type": "mobile"
+    }
+  },
+  {
+    "customer_id": "CUST-1008",
+    "customer_email": "customer8@example.com",
+    "customer_name": "Customer 8",
+    "subject": "General feedback about the service",
+    "description": "I just wanted to share some general feedback with the team about my experience.",
+    "category": "other",
+    "priority": "medium",
+    "status": "resolved",
+    "tags": [
+      "feedback"
+    ],
+    "metadata": {
+      "source": "chat",
+      "browser": "Chrome",
+      "device_type": "tablet"
+    }
+  },
+  {
+    "customer_id": "CUST-1009",
+    "customer_email": "customer9@example.com",
+    "customer_name": "Customer 9",
+    "subject": "Cannot reset my password",
+    "description": "I requested a password reset but the email with the login link never arrives.",
+    "category": "account_access",
+    "priority": "high",
+    "status": "closed",
+    "tags": [
+      "login",
+      "password"
+    ],
+    "metadata": {
+      "source": "phone",
+      "browser": "Firefox",
+      "device_type": "desktop"
+    }
+  },
+  {
+    "customer_id": "CUST-1010",
+    "customer_email": "customer10@example.com",
+    "customer_name": "Customer 10",
+    "subject": "Locked out - can't access account",
+    "description": "This is critical, I can't access my account and a security alert was shown.",
+    "category": "account_access",
+    "priority": "urgent",
+    "status": "new",
+    "tags": [
+      "login",
+      "security"
+    ],
+    "metadata": {
+      "source": "web_form",
+      "browser": "Safari",
+      "device_type": "mobile"
+    }
+  },
+  {
+    "customer_id": "CUST-1011",
+    "customer_email": "customer11@example.com",
+    "customer_name": "Customer 11",
+    "subject": "App crashes on file upload",
+    "description": "The application crashes with an error every time I upload a file. Production down.",
+    "category": "technical_issue",
+    "priority": "urgent",
+    "status": "in_progress",
+    "tags": [
+      "crash",
+      "error"
+    ],
+    "metadata": {
+      "source": "email",
+      "browser": "Edge",
+      "device_type": "tablet"
+    }
+  },
+  {
+    "customer_id": "CUST-1012",
+    "customer_email": "customer12@example.com",
+    "customer_name": "Customer 12",
+    "subject": "Page loads slowly",
+    "description": "The dashboard page is not working well and times out occasionally.",
+    "category": "technical_issue",
+    "priority": "medium",
+    "status": "waiting_customer",
+    "tags": [
+      "timeout"
+    ],
+    "metadata": {
+      "source": "api",
+      "browser": "Chrome",
+      "device_type": "desktop"
+    }
+  },
+  {
+    "customer_id": "CUST-1013",
+    "customer_email": "customer13@example.com",
+    "customer_name": "Customer 13",
+    "subject": "Refund for duplicate charge",
+    "description": "I was charged twice on my last invoice and would like a refund for the duplicate.",
+    "category": "billing_question",
+    "priority": "medium",
+    "status": "resolved",
+    "tags": [
+      "billing",
+      "refund"
+    ],
+    "metadata": {
+      "source": "chat",
+      "browser": "Firefox",
+      "device_type": "mobile"
+    }
+  },
+  {
+    "customer_id": "CUST-1014",
+    "customer_email": "customer14@example.com",
+    "customer_name": "Customer 14",
+    "subject": "Question about my subscription",
+    "description": "I have a minor question about how my monthly subscription invoice is calculated.",
+    "category": "billing_question",
+    "priority": "low",
+    "status": "closed",
+    "tags": [
+      "billing",
+      "subscription"
+    ],
+    "metadata": {
+      "source": "phone",
+      "browser": "Safari",
+      "device_type": "tablet"
+    }
+  },
+  {
+    "customer_id": "CUST-1015",
+    "customer_email": "customer15@example.com",
+    "customer_name": "Customer 15",
+    "subject": "Please add dark mode",
+    "description": "Feature request: it would be nice to add a dark mode for comfortable night usage.",
+    "category": "feature_request",
+    "priority": "low",
+    "status": "new",
+    "tags": [
+      "enhancement"
+    ],
+    "metadata": {
+      "source": "web_form",
+      "browser": "Edge",
+      "device_type": "desktop"
+    }
+  },
+  {
+    "customer_id": "CUST-1016",
+    "customer_email": "customer16@example.com",
+    "customer_name": "Customer 16",
+    "subject": "Defect with steps to reproduce",
+    "description": "Here are the steps to reproduce the defect: open profile, click save, see the error.",
+    "category": "bug_report",
+    "priority": "high",
+    "status": "in_progress",
+    "tags": [
+      "bug",
+      "regression"
+    ],
+    "metadata": {
+      "source": "email",
+      "browser": "Chrome",
+      "device_type": "mobile"
+    }
+  },
+  {
+    "customer_id": "CUST-1017",
+    "customer_email": "customer17@example.com",
+    "customer_name": "Customer 17",
+    "subject": "General feedback about the service",
+    "description": "I just wanted to share some general feedback with the team about my experience.",
+    "category": "other",
+    "priority": "medium",
+    "status": "waiting_customer",
+    "tags": [
+      "feedback"
+    ],
+    "metadata": {
+      "source": "api",
+      "browser": "Firefox",
+      "device_type": "tablet"
+    }
+  },
+  {
+    "customer_id": "CUST-1018",
+    "customer_email": "customer18@example.com",
+    "customer_name": "Customer 18",
+    "subject": "Cannot reset my password",
+    "description": "I requested a password reset but the email with the login link never arrives.",
+    "category": "account_access",
+    "priority": "high",
+    "status": "resolved",
+    "tags": [
+      "login",
+      "password"
+    ],
+    "metadata": {
+      "source": "chat",
+      "browser": "Safari",
+      "device_type": "desktop"
+    }
+  },
+  {
+    "customer_id": "CUST-1019",
+    "customer_email": "customer19@example.com",
+    "customer_name": "Customer 19",
+    "subject": "Locked out - can't access account",
+    "description": "This is critical, I can't access my account and a security alert was shown.",
+    "category": "account_access",
+    "priority": "urgent",
+    "status": "closed",
+    "tags": [
+      "login",
+      "security"
+    ],
+    "metadata": {
+      "source": "phone",
+      "browser": "Edge",
+      "device_type": "mobile"
+    }
+  }
+]

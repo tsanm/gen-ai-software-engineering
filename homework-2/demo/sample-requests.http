@@ -1,0 +1,72 @@
+### Intelligent Customer Support API — sample requests
+### Use with the VS Code "REST Client" extension, or translate to curl.
+@base = http://localhost:3000
+
+### Health
+GET {{base}}/health
+
+### Create a ticket
+# @name create
+POST {{base}}/tickets
+Content-Type: application/json
+
+{
+  "customer_id": "CUST-1",
+  "customer_email": "jane@example.com",
+  "customer_name": "Jane Doe",
+  "subject": "Cannot log in",
+  "description": "I cannot access my account after the latest update. This is critical.",
+  "metadata": { "source": "web_form", "browser": "Chrome", "device_type": "desktop" }
+}
+
+### Create with auto-classification
+POST {{base}}/tickets?auto_classify=true
+Content-Type: application/json
+
+{
+  "customer_id": "CUST-2",
+  "customer_email": "bob@example.com",
+  "customer_name": "Bob Jones",
+  "subject": "App crashes on upload",
+  "description": "The app crashes with an error every time I upload a file. Production down.",
+  "metadata": { "source": "chat", "device_type": "mobile" }
+}
+
+### Validation error (missing email, short description)
+POST {{base}}/tickets
+Content-Type: application/json
+
+{ "customer_id": "CUST-3", "customer_name": "X", "subject": "Hi", "description": "short",
+  "metadata": { "source": "web_form", "device_type": "desktop" } }
+
+### Bulk import (CSV) with auto-classify
+POST {{base}}/tickets/import?format=csv&auto_classify=true
+Content-Type: multipart/form-data; boundary=----b
+
+------b
+Content-Disposition: form-data; name="file"; filename="sample_tickets.csv"
+Content-Type: text/csv
+
+< ../samples/sample_tickets.csv
+------b--
+
+### List all
+GET {{base}}/tickets
+
+### Combined filter
+GET {{base}}/tickets?category=billing_question&priority=high
+
+### Get one  (paste an id from the create response)
+GET {{base}}/tickets/{{create.response.body.id}}
+
+### Update (partial) -> resolve
+PUT {{base}}/tickets/{{create.response.body.id}}
+Content-Type: application/json
+
+{ "status": "resolved", "assigned_to": "agent-7" }
+
+### Auto-classify an existing ticket
+POST {{base}}/tickets/{{create.response.body.id}}/auto-classify
+
+### Delete
+DELETE {{base}}/tickets/{{create.response.body.id}}
