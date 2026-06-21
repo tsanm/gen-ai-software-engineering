@@ -1,0 +1,17 @@
+# Bug Fixer — Decision Log (batch 001)
+
+| step | decision | reason | evidence |
+|------|----------|--------|----------|
+| Pre-flight | Read `implementation-plan.md` in full before touching any file | Plan must be fully understood before first edit | Plan sections 1–4 read; 4 changes identified in dependency order |
+| Pre-flight | Read `src/paycli/transactions.py` and `src/paycli/report.py` before editing | Verify before-state matches plan's `before` blocks to avoid misaligned edits | `transactions.py:32` = `< limit` (matches); `transactions.py:23` = bare division (matches); `report.py:9` = `import subprocess` (matches); `report.py:12` = hardcoded `sk-live-DEMO` (matches); `report.py:21` = `subprocess.call(..., shell=True)` (matches) |
+| Change 1 | Apply `<` → `<=` on `transactions.py:32` exactly as written | Plan §1 Change 1; single-char operator change, lowest risk | Edit succeeded; diff confirmed |
+| Change 1 test | Run 3 targeted tests immediately after edit | Plan §1 Change 1 test command; confirm RED→GREEN flip and no side effect | `test_limit_exactly_at_limit_is_allowed`, `test_limit_over_is_rejected`, `test_limit_under_is_allowed` — 3 passed |
+| Change 2 | Insert `if not amounts: return 0.0` guard before division on `transactions.py:23` | Plan §1 Change 2; resolves ZeroDivisionError for empty input, preserves `float` return type | Edit succeeded |
+| Change 2 test | Run 2 targeted tests immediately after edit | Plan §1 Change 2 test command; confirm RED→GREEN flip | `test_average_of_empty_is_zero`, `test_average_basic` — 2 passed |
+| Change 3 | Replace import block + API_KEY in `report.py` (drop `subprocess`, add `os`+`shutil`; read from env) | Plan §1 Change 3; removes hardcoded secret; adds `shutil` needed for Change 4 in same edit to keep imports clean | Edit succeeded; verified `import paycli.report` succeeds, `API_KEY == ""` when env unset, `grep sk-live-DEMO` = 0 matches |
+| Change 3/4 sequencing | Applied Change 4 immediately after Change 3 without running tests between | Plan §2 dependency note: "do not run tests in that window" — `report.py` would transiently reference `shutil` before function body is in place (though actually import was already added; followed plan instruction conservatively) | Plan §2 explicit instruction |
+| Change 4 | Rewrite `export_report` body to use `shutil.copyfile` with `OSError` catch | Plan §1 Change 4; eliminates shell=True/subprocess path entirely; preserves `int` contract (0 success / 1 failure) for `cli.py:38` | Edit succeeded |
+| Change 4 functional test | Ran benign export (`paycli_src_test.txt`) → exit 0 | Plan §1 Change 4 functional verification step | `python -m paycli export paycli_src_test.txt` completed with exit 0 |
+| Change 4 injection test | Ran injection string `'x; touch /tmp/paycli_pwned'` → exit 1 | Verify metacharacters treated as literal path, not executed | `python -m paycli export 'x; touch /tmp/paycli_pwned'` → exit 1; `/tmp/paycli_pwned` not created |
+| Final | Ran `pytest tests/ -v` (full suite) | Plan §1 Change 4 final step + CLAUDE.md quality gate | 12 passed (0 failed); both formerly-RED tests now GREEN; no regression |
+| Artifacts | Wrote `07-bug-fixer_result.md` and `07-bug-fixer_log.md` to run directory | Pipeline handoff convention; structured result includes `## Handoff → security-verifier` section | Files written to `context/bugs/001/runs/run-2026-06-21T21-30-22Z/` |

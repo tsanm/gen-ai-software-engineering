@@ -1,9 +1,0 @@
-{
-  "run_id": "run-2026-06-21T19-18-05Z",
-  "git": "5d4bd35",
-  "started": "2026-06-21T19-18-05Z",
-  "ended": "2026-06-21T19:30:15Z",
-  "status": "completed",
-  "auto_approve": 1,
-  "stages": [ {"step":"00","agent":"bug-researcher","result":"00-bug-researcher_result.md"}, {"step":"01","agent":"research-verifier","result":"01-research-verifier_result.md"}, {"step":"02","agent":"rca-analyst","result":"02-rca-analyst_result.md"}, {"step":"03","agent":"rca-verifier","result":"03-rca-verifier_result.md"}, {"step":"05","agent":"bug-planner","result":"05-bug-planner_result.md"}, {"step":"07","agent":"bug-fixer","result":"07-bug-fixer_result.md"}, {"step":"08","agent":"security-verifier","result":"08-security-verifier_result.md"}, {"step":"09","agent":"unit-test-generator","result":"09-unit-test-generator_result.md"}]
-}
