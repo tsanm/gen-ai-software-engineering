@@ -45,7 +45,7 @@
 | T1-P0-05 | P0 | Body references skill `research-quality-measurement` by name | grep | ≥1 match |
 | T1-P0-06 | P0 | `skills/research-quality-measurement.md` present, valid frontmatter | parse | `name` matches `^[a-z0-9-]{1,64}$`, no `claude`/`anthropic`; `description` non-empty |
 | T1-P0-07 | P0 | Skill defines ≥2 named quality levels, each with explicit criteria | inspect | ≥2 levels + criteria text |
-| T1-P0-08 | P0 | `context/bugs/001/verified-research.md` present with the 5 required headings | grep headings | all of: Verification Summary, Verified Claims, Discrepancies Found, Research Quality Assessment, References |
+| T1-P0-08 | P0 | `context/bugs/001/research/verified-research.md` present with the 5 required headings | grep headings | all of: Verification Summary, Verified Claims, Discrepancies Found, Research Quality Assessment, References |
 | T1-P0-09 | P0 | Verification Summary states pass/fail **and** a Research Quality level from the skill vocabulary | inspect | both present; level ∈ skill levels |
 | T1-P0-10 | P0 | Every `file:line` in verified-research.md **resolves** | script | 100% resolve; 0 dangling |
 | T1-P1-01 | P1 | Description is third-person and contains a "Use when" trigger | inspect | true |

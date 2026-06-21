@@ -6,6 +6,7 @@ $HW  = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $HW
 $BUG = "context/bugs/001"
 $AUTO = if ($env:AUTO_APPROVE) { $env:AUTO_APPROVE } else { "1" }
+$PERM = if ($env:PERM_MODE) { $env:PERM_MODE } else { "acceptEdits" }
 
 if (-not (Get-Command claude -ErrorAction SilentlyContinue)) { Write-Error "'claude' CLI not found on PATH"; exit 1 }
 if (-not (Test-Path "$BUG/bug-context.md")) { Write-Error "$BUG/bug-context.md missing"; exit 1 }
@@ -34,9 +35,10 @@ function Finalize($status="completed") {
 }
 function Run-Stage($nn, $ag, $canon, $prompt) {
   $res = "$RUN/$nn-${ag}_result.md"; $lg = "$RUN/$nn-${ag}_log.md"
-  Log ">>> [$nn] $ag"
-  $full = "Use the $ag subagent.`n$prompt`nWrite your full structured result (ending with a '## Handoff -> next' section) to: $HW/$res`nWrite a compact decision log (Markdown table: | step | decision | reason | evidence |) to: $HW/$lg"
-  claude -p $full --permission-mode acceptEdits --allowedTools "Read Grep Glob Edit Write Bash" *>> $RLOG
+  $model = ((Select-String -Path "agents/$ag.agent.md" -Pattern '^model:\s*(.+)$').Matches[0].Groups[1].Value).Trim()
+  Log ">>> [$nn] $ag (model=$model)"
+  $full = "$prompt`nWrite your full structured result (ending with a '## Handoff -> next' section) to: $HW/$res`nWrite a compact decision log (Markdown table: | step | decision | reason | evidence |) to: $HW/$lg"
+  claude -p $full --append-system-prompt (Get-Content "agents/$ag.agent.md" -Raw) --model $model --permission-mode $PERM --allowedTools "Read,Grep,Glob,Edit,Write,Bash(.venv/bin/python:*),Bash(python:*),Bash(python3:*),Bash(pytest:*),Bash(ls:*),Bash(cat:*)" *>> $RLOG
   if (-not (Test-Path $res) -or (Get-Item $res).Length -eq 0) { Log "FAIL: $ag produced no result"; Finalize "failed:$ag"; exit 2 }
   if ($canon) { Copy-Item $res "$HW/$canon" -Force }
   $script:STAGES += "{""step"":""$nn"",""agent"":""$ag""}"
@@ -52,8 +54,8 @@ function Checkpoint($nn, $n, $art, $q) {
 }
 
 Run-Stage "00" "bug-researcher"      "$BUG/research/codebase-research.md" "Read $HW/$BUG/bug-context.md and document each seeded issue with exact file:line evidence from $HW/src."
-Run-Stage "01" "research-verifier"   "$BUG/verified-research.md"          "Verify $HW/$BUG/research/codebase-research.md against $HW/src using the research-quality-measurement skill."
-Run-Stage "02" "rca-analyst"         "$BUG/rca.md"                        "Read $HW/$BUG/verified-research.md and produce a 5-Whys root-cause chain per issue."
+Run-Stage "01" "research-verifier"   "$BUG/research/verified-research.md" "Verify $HW/$BUG/research/codebase-research.md against $HW/src using the research-quality-measurement skill."
+Run-Stage "02" "rca-analyst"         "$BUG/rca.md"                        "Read $HW/$BUG/research/verified-research.md and produce a 5-Whys root-cause chain per issue."
 Run-Stage "03" "rca-verifier"        "$BUG/verified-rca.md"               "Validate the 5-Whys chains in $HW/$BUG/rca.md."
 Checkpoint "04" "1" "$BUG/verified-rca.md"        "Is the root cause correct and are we fixing the right thing?"
 Run-Stage "05" "bug-planner"         "$BUG/implementation-plan.md"        "Read $HW/$BUG/verified-rca.md and write a before/after implementation plan with a test command per change."

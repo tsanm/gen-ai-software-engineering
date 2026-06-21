@@ -1,21 +1,23 @@
-"""Report export for paycli.
-
-NOTE: this module contains intentional seeded security issues for the pipeline to
-find (see context/bugs/001/bug-context.md). The values/paths are demo-only.
-"""
+"""Report export for paycli."""
 
 from __future__ import annotations
 
-import subprocess
+import os
+import shutil
 
-# VULN-2: hardcoded secret committed in source (fake value, for the security agent to flag).
-API_KEY = "sk-live-DEMO0000000000000000000000"
+# API key is read from the environment, never committed to source.
+API_KEY = os.environ.get("PAYCLI_API_KEY", "")
 
 
 def export_report(path: str) -> int:
-    """Concatenate the file at ``path`` into ``report.txt``.
+    """Copy the file at ``path`` into ``report.txt`` using plain file I/O.
 
-    VULN-1: builds a shell command from caller-supplied input with ``shell=True``,
-    enabling command injection (e.g. ``path = "x; rm -rf ."``).
+    No shell is involved, so a caller-supplied ``path`` cannot inject commands.
+    Returns 0 on success and 1 if the source path cannot be read.
     """
-    return subprocess.call(f"cat {path} > report.txt", shell=True)
+    try:
+        with open(path, "rb") as src, open("report.txt", "wb") as dst:
+            shutil.copyfileobj(src, dst)
+    except OSError:
+        return 1
+    return 0

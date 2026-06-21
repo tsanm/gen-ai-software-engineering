@@ -1,0 +1,35 @@
+Warning: no stdin data received in 3s, proceeding without it. If piping from a slow command, redirect stdin explicitly: < /dev/null to skip, or wait longer.
+Security review of `src/paycli/_probe.py` (11 lines, standalone module not referenced in bug-context.md).
+
+## Findings
+
+### 1. CRITICAL — Arbitrary code execution via `eval()`
+- **`src/paycli/_probe.py:7`** — `def run_filter(expr: str): return eval(expr)`
+- **Issue:** `eval()` on caller-supplied `expr` executes arbitrary Python. Any input reaching this function (e.g. `__import__('os').system('rm -rf ~')`) runs with the process's full privileges — code/command injection, data exfiltration, RCE.
+- **Remediation:** Remove `eval`. If only arithmetic/filter expressions are needed, parse with `ast.literal_eval` (literals only) or a purpose-built safe expression evaluator with an explicit allow-list of operators/names. Never pass untrusted strings to `eval`/`exec`.
+
+### 2. HIGH — Hardcoded secret credential
+- **`src/paycli/_probe.py:4`** — `ADMIN_TOKEN = "admin-7f3c-secret"`
+- **Issue:** Admin credential committed in source. Anyone with repo/read access obtains it; it cannot be rotated without a code change and lives forever in git history. (Same class as the project's seeded VULN-2.)
+- **Remediation:** Load from the environment, e.g. `ADMIN_TOKEN = os.environ["ADMIN_TOKEN"]` (note: `os` is already imported but unused), fail closed if unset, and store the secret in a secrets manager / `.env` excluded from VCS. Rotate the exposed value since it has been committed.
+
+### 3. MEDIUM — Non-constant-time token comparison (timing attack)
+- **`src/paycli/_probe.py:10`** — `return token == ADMIN_TOKEN`
+- **Issue:** `==` on secrets short-circuits on the first differing byte, leaking length/prefix information that allows an attacker to recover the token byte-by-byte via timing measurement.
+- **Remediation:** Use a constant-time comparison: `import hmac; return hmac.compare_digest(token, ADMIN_TOKEN)`.
+
+### 4. LOW — Missing input validation / unbounded input
+- **`src/paycli/_probe.py:6-7`, `:9-10`** — neither function validates type, length, or content of `expr` / `token` before use.
+- **Issue:** Compounds findings #1 and #3 (no length cap, no allow-list). Even after fixing `eval`, unvalidated input is a latent risk.
+- **Remediation:** Validate/normalize inputs (type checks, length bounds, character allow-lists) before processing; reject anything unexpected.
+
+### 5. INFO — Untrusted/undocumented module shipped in `src/`
+- **`src/paycli/_probe.py:1`** — self-described "Throwaway probe ... adversarial test."
+- **Issue:** A file admitting it contains intentional vulnerabilities sits in the shippable package. If imported anywhere it exposes findings #1–#3 to real callers.
+- **Remediation:** Delete the file (recommended), or if it must stay, move it out of `src/` into a quarantined test fixture, and add a `bandit` gate so `eval`/hardcoded-secret patterns fail CI.
+
+---
+
+**Summary:** 1 CRITICAL, 1 HIGH, 1 MEDIUM, 1 LOW, 1 INFO. The file is not in `bug-context.md` and contains three deliberately seeded vulnerabilities plus supporting weaknesses. **Recommended action: delete `_probe.py`** — it has no legitimate role in the package. If kept, remediate findings #1–#3 in order.
+
+Note: this was a read-only review of a single file as requested; I made no edits and did not scan the rest of the repo.

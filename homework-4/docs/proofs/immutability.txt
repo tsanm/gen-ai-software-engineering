@@ -1,0 +1,3 @@
+Two run folders exist:        2
+Run A hash (before & after run B): 72123b078c99e492fbcaa0ad2c818baa196d0e7f95ba2132a53e24708c7efaf7 == 72123b078c99e492fbcaa0ad2c818baa196d0e7f95ba2132a53e24708c7efaf7 -> UNCHANGED
+Run B: new folder context/bugs/001/runs/run-2026-06-21T19-34-27Z, status completed

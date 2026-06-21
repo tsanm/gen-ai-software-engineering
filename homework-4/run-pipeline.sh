@@ -6,6 +6,7 @@ set -uo pipefail
 HW="$(cd "$(dirname "$0")" && pwd)"; cd "$HW"
 BUG="context/bugs/001"
 AUTO_APPROVE="${AUTO_APPROVE:-1}"   # 1 = record verdict + continue (demo); 0 = interactive prompt
+PERM_MODE="${PERM_MODE:-acceptEdits}"  # acceptEdits (default/safe) | bypassPermissions (unattended run)
 
 # --- preflight -------------------------------------------------------------
 command -v claude >/dev/null 2>&1 || { echo "ERROR: 'claude' CLI not found on PATH"; exit 1; }
@@ -35,19 +36,24 @@ finalize(){ # status
 run_stage(){ # nn agent canonical "prompt"
   local nn="$1" ag="$2" canon="$3" prompt="$4"
   local res="$RUN/${nn}-${ag}_result.md" lg="$RUN/${nn}-${ag}_log.md"
-  log ">>> [$nn] $ag"
-  claude -p "Use the ${ag} subagent.
-${prompt}
+  local model; model="$(awk -F': ' '/^model:/{print $2; exit}' "agents/${ag}.agent.md")"
+  log ">>> [$nn] $ag (model=$model)"
+  # The agent definition is injected as the system prompt (honors its model); registered
+  # subagents + skills in .claude/ are also auto-discovered.
+  claude -p "${prompt}
 Write your full structured result (ending with a '## Handoff -> next' section) to: $HW/$res
 Write a compact decision log (Markdown table: | step | decision | reason | evidence |) to: $HW/$lg" \
-    --permission-mode acceptEdits --allowedTools "Read Grep Glob Edit Write Bash" >>"$RLOG" 2>&1
+    --append-system-prompt "$(cat "agents/${ag}.agent.md")" \
+    --model "$model" --permission-mode "$PERM_MODE" \
+    --allowedTools "Read,Grep,Glob,Edit,Write,Bash(.venv/bin/python:*),Bash(python:*),Bash(python3:*),Bash(pytest:*),Bash(ls:*),Bash(cat:*)" >>"$RLOG" 2>&1
   if [ ! -s "$res" ]; then log "FAIL: $ag produced no result ($res)"; finalize "failed:$ag"; exit 2; fi
   [ -n "$canon" ] && cp "$res" "$HW/$canon"
   STAGES="$STAGES {\"step\":\"$nn\",\"agent\":\"$ag\",\"result\":\"${nn}-${ag}_result.md\"},"
   log "    ok -> $res${canon:+ , canonical $canon}"
 }
 checkpoint(){ # nn N artifact "question"
-  local nn="$1" n="$2" art="$3" q="$4" cp="$RUN/${nn}-CHECKPOINT-${n}.md" verdict
+  local nn="$1" n="$2" art="$3" q="$4" verdict=""
+  local cp="$RUN/${nn}-CHECKPOINT-${n}.md"
   if [ "$AUTO_APPROVE" = "1" ]; then verdict="APPROVED (auto)"
   else echo; echo "CHECKPOINT $n — review: $HW/$art"; echo "Q: $q"
        read -r -p "Approve? [y/N] " a; [ "$a" = "y" ] && verdict="APPROVED" || verdict="REJECTED"; fi
@@ -59,8 +65,8 @@ checkpoint(){ # nn N artifact "question"
 
 # --- pipeline (sequential; canonical flow + 2 human checkpoints) -----------
 run_stage 00 bug-researcher      "$BUG/research/codebase-research.md" "Read $HW/$BUG/bug-context.md and document each seeded issue with exact file:line evidence from $HW/src."
-run_stage 01 research-verifier   "$BUG/verified-research.md"          "Verify $HW/$BUG/research/codebase-research.md against $HW/src using the research-quality-measurement skill."
-run_stage 02 rca-analyst         "$BUG/rca.md"                        "Read $HW/$BUG/verified-research.md and produce a 5-Whys root-cause chain per issue."
+run_stage 01 research-verifier   "$BUG/research/verified-research.md" "Verify $HW/$BUG/research/codebase-research.md against $HW/src using the research-quality-measurement skill."
+run_stage 02 rca-analyst         "$BUG/rca.md"                        "Read $HW/$BUG/research/verified-research.md and produce a 5-Whys root-cause chain per issue."
 run_stage 03 rca-verifier        "$BUG/verified-rca.md"               "Validate the 5-Whys chains in $HW/$BUG/rca.md."
 checkpoint 04 1 "$BUG/verified-rca.md"        "Is the root cause correct and are we fixing the right thing?"
 run_stage 05 bug-planner         "$BUG/implementation-plan.md"        "Read $HW/$BUG/verified-rca.md and write a before/after implementation plan with a test command per change."
