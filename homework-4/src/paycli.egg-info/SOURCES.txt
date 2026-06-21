@@ -1,0 +1,12 @@
+pyproject.toml
+src/paycli/__init__.py
+src/paycli/__main__.py
+src/paycli/cli.py
+src/paycli/report.py
+src/paycli/transactions.py
+src/paycli.egg-info/PKG-INFO
+src/paycli.egg-info/SOURCES.txt
+src/paycli.egg-info/dependency_links.txt
+src/paycli.egg-info/requires.txt
+src/paycli.egg-info/top_level.txt
+tests/test_baseline.py

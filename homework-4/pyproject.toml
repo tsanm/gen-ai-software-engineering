@@ -1,0 +1,27 @@
+[project]
+name = "paycli"
+version = "0.1.0"
+description = "Tiny payments/transactions CLI — target app for the 4-agent bug-fix pipeline."
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6", "mypy>=1.11", "bandit>=1.7", "radon>=6"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["paycli"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["src"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
