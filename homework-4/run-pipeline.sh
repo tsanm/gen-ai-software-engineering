@@ -26,6 +26,7 @@ log "=== Bug pipeline run-$TS (git $GIT, auto_approve=$AUTO_APPROVE) ==="
 mkdir -p .claude/agents .claude/skills
 for f in agents/*.agent.md; do cp "$f" ".claude/agents/$(basename "${f%.agent.md}").md"; done
 cp skills/*.md .claude/skills/ 2>/dev/null || true
+"$HW/render-status.sh" "$RUN" >/dev/null 2>&1 || true   # initial board (all pending)
 
 STAGES=""
 finalize(){ # status
@@ -38,6 +39,7 @@ run_stage(){ # nn agent canonical "prompt"
   local res="$RUN/${nn}-${ag}_result.md" lg="$RUN/${nn}-${ag}_log.md"
   local model; model="$(awk -F': ' '/^model:/{print $2; exit}' "agents/${ag}.agent.md")"
   log ">>> [$nn] $ag (model=$model)"
+  "$HW/render-status.sh" "$RUN" "$nn" >/dev/null 2>&1 || true   # mark this stage running
   # The agent definition is injected as the system prompt (honors its model); registered
   # subagents + skills in .claude/ are also auto-discovered.
   claude -p "${prompt}
@@ -50,6 +52,7 @@ Write a compact decision log (Markdown table: | step | decision | reason | evide
   [ -n "$canon" ] && cp "$res" "$HW/$canon"
   STAGES="$STAGES {\"step\":\"$nn\",\"agent\":\"$ag\",\"result\":\"${nn}-${ag}_result.md\"},"
   log "    ok -> $res${canon:+ , canonical $canon}"
+  "$HW/render-status.sh" "$RUN" >/dev/null 2>&1 || true        # mark this stage done
 }
 checkpoint(){ # nn N artifact "question"
   local nn="$1" n="$2" art="$3" q="$4" verdict=""
@@ -60,6 +63,7 @@ checkpoint(){ # nn N artifact "question"
   printf '# Checkpoint %s\n\n- Reviewed: `%s`\n- Question: %s\n- Decision: **%s**\n- At: %s (UTC)\n' \
     "$n" "$art" "$q" "$verdict" "$(date -u +%FT%TZ)" > "$cp"
   log "--- CHECKPOINT $n: $verdict"
+  "$HW/render-status.sh" "$RUN" >/dev/null 2>&1 || true
   case "$verdict" in *APPROVED*) ;; *) log "Checkpoint $n rejected — stopping."; finalize "rejected:cp$n"; exit 3;; esac
 }
 
@@ -76,5 +80,6 @@ run_stage 08 security-verifier   "$BUG/security-report.md"            "Security-
 run_stage 09 unit-test-generator "$BUG/test-report.md"               "Generate FIRST tests for the changed code (BUG-A boundary, BUG-B empty, VULN-1 injection-blocked) under $HW/tests and run pytest with coverage."
 
 finalize completed
+"$HW/render-status.sh" "$RUN" >/dev/null 2>&1 || true        # final board (all done)
 log "=== DONE -> $RUN ==="
 echo "Artifacts in run folder:"; ls -1 "$RUN"

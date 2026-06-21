@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Security scan — before vs after</title>
+<style>
+ body{background:#0d1117;color:#e6edf3;margin:26px;font-family:-apple-system,Segoe UI,sans-serif}
+ h1{font-size:18px;margin:0 0 4px} .sub{color:#8b949e;font-size:13px;margin-bottom:16px}
+ .cols{display:flex;gap:16px;flex-wrap:wrap}
+ .card{flex:1;min-width:360px;border-radius:10px;overflow:hidden;border:1px solid #30363d}
+ .card h2{margin:0;padding:9px 14px;font-size:14px}
+ .before h2{background:#3a1417;color:#ff7b72} .after h2{background:#0f2a16;color:#56d364}
+ pre{margin:0;padding:13px 14px;white-space:pre-wrap;font:12.5px/1.55 ui-monospace,Menlo,monospace;color:#c9d1d9}
+ .after pre{color:#56d364;font-size:15px;font-weight:600}
+ table{border-collapse:collapse;font-size:13px;margin-top:18px} td,th{border:1px solid #30363d;padding:6px 12px;text-align:left}
+ th{color:#8b949e} .ok{color:#3fb950;font-weight:600}
+ code{background:#161b22;padding:1px 5px;border-radius:4px}
+</style></head><body>
+ <h1>🛡️ Security scan — <code>bandit</code> before vs after the pipeline</h1>
+ <div class="sub">seeded code (08dfb7f) → pipeline-fixed (HEAD) · report-only security-verifier (Opus, read-only)</div>
+ <div class="cols">
+   <div class="card before"><h2>BEFORE — seeded code · 1 HIGH</h2><pre>&gt;&gt; Issue: [B404:blacklist] Consider possible security implications associated with the subprocess module.
+   Severity: Low   Confidence: High
+   Location: report.py:9:0
+&gt;&gt; Issue: [B602:subprocess_popen_with_shell_equals_true] subprocess call with shell=True identified, security issue.
+   Severity: High   Confidence: High
+   Location: report.py:21:11
+21	    return subprocess.call(f&quot;cat {path} &gt; report.txt&quot;, shell=True)
+	Total issues (by severity):
+	Total issues (by confidence):</pre></div>
+   <div class="card after"><h2>AFTER — pipeline-fixed</h2><pre>✅  No issues identified.
+     0 HIGH / 0 CRITICAL across src/paycli/</pre></div>
+ </div>
+ <table>
+   <tr><th>Vulnerability</th><th>Status (security-verifier)</th></tr>
+   <tr><td>VULN-1 — command injection (<code>shell=True</code>) in <code>export_report</code></td><td class="ok">✅ REMEDIATED</td></tr>
+   <tr><td>VULN-2 — hardcoded secret <code>API_KEY</code></td><td class="ok">✅ REMEDIATED (read from env)</td></tr>
+ </table>
+</body></html>
