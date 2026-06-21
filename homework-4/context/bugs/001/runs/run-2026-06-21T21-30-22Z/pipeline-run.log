@@ -1,0 +1,164 @@
+=== Bug pipeline run-2026-06-21T21-30-22Z (git d5ccbb3 · config pipeline.config.json · auto_approve=1 · perm=acceptEdits) ===
+>>> [00] bug-researcher (model=opus)
+Documented all four seeded issues with exact `file:line` evidence and verbatim snippets. Both artifacts written to the run folder.
+
+**Findings (facts only):**
+
+| Issue | Claim | Location |
+|-------|-------|----------|
+| BUG-A | Strict `<` comparison; sum equal to `limit` returns `False` (`60+40 < 100` → `False`) | `transactions.py:32` |
+| BUG-B | `sum / len` with no empty guard; empty input → `ZeroDivisionError` | `transactions.py:23` |
+| VULN-1 | User `path` f-string-interpolated into `subprocess.call(..., shell=True)` | `report.py:21` |
+| VULN-2 | Hardcoded `API_KEY` literal in source | `report.py:12` |
+
+I also captured supporting call-path evidence from `cli.py` (subcommand routing and `nargs="*"`) showing each defect is reachable from a CLI command, since the verifier and RCA stages need reachability facts. All four issues were found at their expected locations — none missing. No evaluative language, no fixes, no edits to source.
+
+- **Result** → `00-bug-researcher_result.md` (ends with `## Handoff → research-verifier`)
+- **Decision log** → `00-bug-researcher_log.md`
+
+Ready for the **research-verifier** stage to fact-check each cited `file:line` against source.
+    ok -> context/bugs/001/runs/run-2026-06-21T21-30-22Z/00-bug-researcher_result.md , canonical context/bugs/001/research/codebase-research.md
+>>> [01] research-verifier (model=opus)
+Verification complete. **Research Quality: Verified** (PASS).
+
+I opened every cited line in `src/` and confirmed all 10 claims match verbatim:
+
+| Claim | `file:line` | Match |
+|-------|-------------|-------|
+| BUG-A — strict `<` boundary | `transactions.py:32` | ✅ |
+| BUG-B — unguarded `len()` division | `transactions.py:23` | ✅ |
+| VULN-1 — `shell=True` f-string on `path` | `report.py:21` | ✅ |
+| VULN-2 — hardcoded `API_KEY` secret | `report.py:12` | ✅ |
+| 6 supporting CLI/import claims | `cli.py:19,27,34,36,38`, `report.py:9` | ✅ |
+
+**Discrepancies:** None. (The quoted snippets omit leading indentation — expected for inline quotation, not a mismatch.)
+
+Both artifacts written to the run folder:
+- `01-research-verifier_result.md` — full structured report with all 5 required sections + `## Handoff → rca-analyst`
+- `01-research-verifier_log.md` — compact decision-log table
+
+**Gate:** PASS — research is safe to act on. The pipeline may proceed to root-cause analysis (rca-analyst, 5 Whys).
+    ok -> context/bugs/001/runs/run-2026-06-21T21-30-22Z/01-research-verifier_result.md , canonical context/bugs/001/research/verified-research.md
+>>> [02] rca-analyst (model=opus)
+RCA complete. Both artifacts are written.
+
+## Summary
+
+I analyzed all four verified issues using 5 Whys, grounding every step in confirmed `file:line` evidence. Each chain drives past the symptom to a **fundamental** cause:
+
+| ID | Where | Root cause (fundamental level) |
+|----|-------|--------------------------------|
+| **BUG-A** | `transactions.py:32` | Exclusive `<` encodes an **unspecified inclusive boundary** — "is the limit itself allowed?" was never resolved into the operator (`<=`) or a boundary test. |
+| **BUG-B** | `transactions.py:23` × `cli.py:19` | **Precondition/contract gap** — body assumes `len ≥ 1`, but `nargs="*"` admits `[]`, leaving the empty domain undefined. |
+| **VULN-1** | `report.py:21` ← `cli.py:27/38` | **Code/data boundary erased** — untrusted `path` composed into a `shell=True` command string; a shell was invoked for a file op and input treated as trusted (Critical). |
+| **VULN-2** | `report.py:12` | **Secret bound to source, not environment** — no config/injection seam exists, so the credential's lifecycle is tied to the code. |
+
+Each issue got a 5-step Whys chain, a Root Cause Statement, symptom/severity, and fault localization. I also flagged per-issue regression risks (e.g. preserve the strictly-over case for BUG-A, decide the empty-input return for BUG-B, preserve the `int` status contract for VULN-1, decide fail-fast vs. default for VULN-2). No code was modified — analysis only.
+
+**Artifacts:**
+- `…/run-2026-06-21T21-30-22Z/02-rca-analyst_result.md` — full RCA, ending in `## Handoff → rca-verifier`
+- `…/run-2026-06-21T21-30-22Z/02-rca-analyst_log.md` — decision log table
+
+Next stage: **rca-verifier** validates the chains and `file:line` evidence, then CHECKPOINT 1 (human review) before planning.
+    ok -> context/bugs/001/runs/run-2026-06-21T21-30-22Z/02-rca-analyst_result.md , canonical context/bugs/001/rca.md
+>>> [03] rca-verifier (model=opus)
+RCA verification complete. **Verdict: VERIFIED WITH NOTES** → proceed to CHECKPOINT 1 → bug-planner.
+
+## What I checked
+- **Every cited code `file:line` (17/17)** — opened `transactions.py`, `report.py`, `cli.py` and confirmed each location exists and matches the RCA's quote verbatim.
+- **5 Whys depth** — all four chains are depth-5 and reach a genuinely *fundamental* cause (unmodelled inclusive boundary; precondition/contract gap; erased code/data boundary; missing secret-lifecycle seam), not a symptom.
+- **Side effects** — grepped every affected symbol. Overall risk **Low**; notably `API_KEY` has **zero readers** (only assigned at `report.py:12`), confirming the RCA's regression claim.
+
+## The one real finding (N1)
+The RCA's deepest step (Why-5) for **BUG-A** and **BUG-B** both claim the relevant tests are *absent*. That's factually wrong:
+- `tests/test_baseline.py:12-14` already tests the exact-limit boundary (`60+40==100→True`).
+- `tests/test_baseline.py:25-27` already tests `average_transaction([]) == 0`.
+
+These are the **RED baseline** (TDD, failing pre-fix). So the correct framing is the inverse of the RCA's: a failing signal *exists* — the bug persists despite a RED test, not for lack of one. This **strengthens** the root cause and doesn't change any fix direction, so it's a note rather than a NEEDS-REVISION blocker. I carried it forward as an anti-duplication flag: downstream stages should **extend** the baseline (add the VULN-1 injection test), not re-create these two.
+
+Artifacts written:
+- `…/run-2026-06-21T21-30-22Z/03-rca-verifier_result.md` (full report + `## Handoff → next`)
+- `…/run-2026-06-21T21-30-22Z/03-rca-verifier_log.md` (decision log)
+    ok -> context/bugs/001/runs/run-2026-06-21T21-30-22Z/03-rca-verifier_result.md , canonical context/bugs/001/verified-rca.md
+--- CHECKPOINT 1: APPROVED (auto)
+>>> [05] bug-planner (model=opus)
+Plan written. Summary:
+
+**Implementation plan** (`05-bug-planner_result.md`) — 4 changes, each with exact before/after, a test command, and a rollback:
+
+| # | Issue | File:line | Fix |
+|---|-------|-----------|-----|
+| 1 | BUG-A | `transactions.py:32` | `<` → `<=` (inclusive limit) |
+| 2 | BUG-B | `transactions.py:23` | guard `if not amounts: return 0.0` |
+| 3 | VULN-2 | `report.py:12` | `os.environ.get("PAYCLI_API_KEY", "")` |
+| 4 | VULN-1 | `report.py:21` | `shutil.copyfile` (no shell), preserve `int` 0/1 contract |
+
+**Order:** BUG-A → BUG-B → VULN-2 → VULN-1 (safest first). The one dependency: Changes 3 and 4 share `report.py`'s import block, so VULN-2's edit (which adds `os`/`shutil`, drops `subprocess`) must land **before** VULN-1's body rewrite to keep the file ruff-clean.
+
+**Key decisions, grounded in the verified RCA:**
+- BUG-B returns `0.0` (not `0`) to keep `-> float` valid under `mypy --strict`.
+- VULN-2 defaults to empty string — verified RCA confirmed **zero readers** of `API_KEY`, so there's no import-time crash and fail-fast is unnecessary.
+- VULN-1 preserves the `int` status contract consumed at `cli.py:38`.
+- **No new tests** in this stage: per note **N1**, the boundary and empty-input tests already exist as RED baseline tests; the injection-blocked test is the unit-test-generator's job. No duplicates.
+
+No code was modified, no open questions remain. Decision log written to `05-bug-planner_log.md`. Ready for **CHECKPOINT 2** (human review) → bug-fixer.
+    ok -> context/bugs/001/runs/run-2026-06-21T21-30-22Z/05-bug-planner_result.md , canonical context/bugs/001/implementation-plan.md
+--- CHECKPOINT 2: APPROVED (auto)
+>>> [07] bug-fixer (model=sonnet)
+All 4 changes applied and verified. Here's the summary:
+
+**Change 1 (BUG-A)** — `transactions.py:32`: `< limit` → `<= limit`. 3 tests passed (boundary test flipped RED→GREEN).
+
+**Change 2 (BUG-B)** — `transactions.py:23`: added `if not amounts: return 0.0` guard. 2 tests passed (empty-average test flipped RED→GREEN).
+
+**Change 3 (VULN-2)** — `report.py` import block: dropped `import subprocess`, added `import os` + `import shutil`; replaced hardcoded secret with `os.environ.get("PAYCLI_API_KEY", "")`. Secret literal confirmed gone.
+
+**Change 4 (VULN-1)** — `report.py:export_report`: replaced `subprocess.call(..., shell=True)` with `shutil.copyfile`; benign export exits 0, injection path exits 1 with no side effect.
+
+**Final suite: 12/12 passed.** Both artifact files written to `runs/run-2026-06-21T21-30-22Z/`.
+    ok -> context/bugs/001/runs/run-2026-06-21T21-30-22Z/07-bug-fixer_result.md , canonical context/bugs/001/fix-summary.md
+>>> [08] security-verifier (model=opus)
+Security review complete. Both artifacts written.
+
+## Verdict: PASS — gate clear to proceed
+
+I reviewed the changed code by reading the **actual source** (not just the fix summary), and independently confirmed both seeded vulnerabilities are remediated:
+
+| Seeded vuln | Status | Evidence |
+|---|---|---|
+| **VULN-1** — command injection (`shell=True`) | ✅ **REMEDIATED** | `report.py:24` now uses `shutil.copyfile(path, "report.txt")`; grep for `shell=True`/`subprocess`/`os.system`/`eval`/`exec` across `src/` → **0 matches**. `path` is data, not shell. |
+| **VULN-2** — hardcoded secret | ✅ **REMEDIATED** | `report.py:13` reads `os.environ.get("PAYCLI_API_KEY", "")`; grep for `sk-live` → **0 matches**. |
+
+**Residual CRITICAL: 0 · HIGH: 0.** No re-fix needed.
+
+Defense-in-depth observations (non-blocking):
+- **LOW-1** — `export_report` copies an unvalidated, unconfined `path`, so an arbitrary local file can be read into `report.txt` (path-traversal shape). Bounded because it's a local CLI running with the user's own privileges, but worth confining if ever exposed via a service.
+- **LOW-2** — empty-credential fallback fails open silently if `PAYCLI_API_KEY` is ever actually consumed; validate at use-time.
+- **INFO** — fixed `report.txt` overwrite in CWD; the two `transactions.py` logic fixes carry no security surface. The `except OSError` scope is correctly **narrow** (not over-broad).
+
+**Artifacts:**
+- `runs/run-2026-06-21T21-30-22Z/08-security-verifier_result.md` (full report, ends with `## Handoff → unit-test-generator`)
+- `runs/run-2026-06-21T21-30-22Z/08-security-verifier_log.md` (decision table)
+
+No files were edited (report-only). Next stage: **unit-test-generator** — I've handed off explicit security-regression test asks for both vulns plus BUG-A/BUG-B.
+    ok -> context/bugs/001/runs/run-2026-06-21T21-30-22Z/08-security-verifier_result.md , canonical context/bugs/001/security-report.md
+>>> [09] unit-test-generator (model=sonnet)
+The unit-test-generator agent completed successfully. Here's the summary:
+
+**6 new tests written** in `tests/test_generated.py`:
+
+| Bug | Test | Result |
+|-----|------|--------|
+| BUG-A | `== limit` allowed, `limit + 0.01` rejected | PASS |
+| BUG-B | `average_transaction([])` returns `0.0`, no raise | PASS |
+| VULN-1 | injection payload — `pwned` file does NOT exist | PASS |
+
+**Full suite: 18/18 passed, 100% coverage** (exceeds the 90% quality gate).
+
+Both artifacts written:
+- `09-unit-test-generator_result.md` — full structured result with `## Handoff → (pipeline complete)`
+- `09-unit-test-generator_log.md` — decision log table
+
+The pipeline is complete.
+    ok -> context/bugs/001/runs/run-2026-06-21T21-30-22Z/09-unit-test-generator_result.md , canonical context/bugs/001/test-report.md
+=== DONE -> context/bugs/001/runs/run-2026-06-21T21-30-22Z ===
