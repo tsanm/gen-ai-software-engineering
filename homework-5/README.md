@@ -46,7 +46,6 @@ bounded/validated `word_count`, `readOnlyHint`/`idempotentHint`, masked errors, 
 
 ```bash
 cd homework-5 && python -m pip install -r tests/requirements-dev.txt && python -m pytest tests   # 65 tests
-# regenerate evidence report: export GITHUB_MCP_TOKEN=$(gh auth token); set -a; . .env; set +a; python capture/capture.py
 ```
 
 ## Layout
@@ -55,7 +54,6 @@ cd homework-5 && python -m pip install -r tests/requirements-dev.txt && python -
 homework-5/
 ├── README.md  HOWTORUN.md  BEST_PRACTICES.md  TEST_PLAN.md  .mcp.json
 ├── custom-mcp-server/   server.py · lorem-ipsum.md · requirements.txt
-├── capture/capture.py   real request/response → docs/screenshots/evidence.html
 ├── tests/               65 tests (custom E2E · config/security · live integration)
 └── docs/screenshots/    github · filesystem · jira-or-notion · custom-mcp-read · context7
 ```
