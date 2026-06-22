@@ -47,11 +47,23 @@ Function to CREATE: process_message(message: dict) -> dict
 Details: <what the agent checks / transforms / decides>
 ```
 
-Rules:
+## Steps
 1. Read `homework-6/sample-transactions.json` first so the spec reflects the
-   real input shape.
-2. Include a Low-Level Task for **every** agent in the pipeline (validator,
-   fraud detector, compliance checker, settlement processor, reporting agent).
-3. Keep the Implementation Notes block verbatim — it encodes the engineering
+   real input shape. **Output:** a fields table `field · type · example`.
+2. Write the High-Level Objective + 4–5 Mid-Level Objectives.
+   **Output:** the objectives block.
+3. Write the Implementation Notes verbatim — they encode the engineering
    invariants (Decimal money, ISO-4217, audit logging, no plaintext PII).
-4. After writing, print a short checklist confirming all 5 sections are present.
+   **Output:** the notes block.
+4. Write the Context and a Low-Level Task for **every** agent in the pipeline
+   (validator, fraud detector, compliance checker, settlement processor,
+   reporting agent). **Output:** one Low-Level Task block per agent.
+5. Write `homework-6/specification.md` with the Authority note, the 5 sections,
+   `## Assumptions`, and a `## Traceability` table. **Output:** the spec file.
+
+## Expected output
+`homework-6/specification.md` containing all 5 sections (no placeholders), an
+Authority/closed-world note, `## Assumptions`, and a `## Traceability` table.
+
+**Self-check:** print a checklist confirming all 5 sections + Assumptions +
+Traceability are present and no field/threshold was invented beyond the input.

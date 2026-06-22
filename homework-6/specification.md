@@ -6,6 +6,20 @@
 > Ingest the information from this file, implement the Low-Level Tasks, and
 > generate the code that will satisfy the High and Mid-Level Objectives.
 
+## Authority & sources of truth (read first)
+
+This specification is the **single source of truth (SSOT)** for WHAT to build —
+its objectives, thresholds, fee rate, currencies, fields and codes are
+authoritative. `agents.md` defines HOW agents behave; `CLAUDE.md` is the
+always-on subset of the rules. The four meta-agent definitions live in
+`agents-meta/*.agent.md`.
+
+**Closed-world rule:** do **not** invent endpoints, fields, currencies, or codes
+that are not defined here or present in `sample-transactions.json`. If a needed
+value is undefined, **ask — do not guess** (and, if a sensible default is chosen,
+record it under `## Assumptions`). Unknown / malformed input ⇒ **fail closed**
+(reject with a human-readable `reason`).
+
 ## 1. High-Level Objective
 
 - Build a cooperating multi-agent pipeline that validates, risk-scores,
@@ -122,3 +136,37 @@ File to CREATE: integrator.py
 Function to CREATE: run_pipeline(sample_path, shared_root, logger) -> dict
 Details: Drives the file-based protocol; returns a summary with all_processed/missing.
 ```
+
+## Assumptions
+
+These hold unless the requirements say otherwise; each is a deliberate default,
+not an invented requirement (see the closed-world rule above).
+
+- **Supported currencies** are exactly USD, EUR, GBP, JPY, CHF, CAD, AUD; any
+  other ISO-4217 (or non-ISO) code is rejected.
+- **Negative amounts** are valid **only** for refunds; all other types require a
+  positive, non-zero amount.
+- **Off-hours** for fraud scoring means 00:00–05:00 UTC; timestamps are ISO-8601
+  and interpreted as UTC.
+- **Regulatory reporting** is flagged at amount ≥ 10,000 (transaction currency
+  units); the high-value fraud band starts at $50,000-equivalent.
+- **Settlement fee** is a flat 0.25% of the amount, quantised `ROUND_HALF_UP` to
+  the currency's minor units; held/rejected transactions are passed through
+  unchanged.
+- **Account numbers and descriptions are PII** and are masked before any log line
+  or MCP response (`ACC-1001` → `****01`).
+- The pipeline is **single-run, batch** over `sample-transactions.json`; the
+  file-based bus is not concurrent across processes.
+- **Coverage gate floor is 80%** (push-blocking); the suite targets ≥ 90%.
+
+## Traceability
+
+Each meta-agent (defined in `agents-meta/`) produces specific deliverables,
+verified by specific tests.
+
+| Meta-agent (`agents-meta/`) | Deliverable file(s) | Test file(s) |
+|---|---|---|
+| `spec-agent.agent.md` (Spec) | `specification.md`, `agents.md`, `CLAUDE.md`, `.claude/commands/write-spec.md` | n/a (verified by `verify.sh` content checks) |
+| `code-agent.agent.md` (Code) | `integrator.py`, `agents/*.py`, `mcp/server.py`, `research-notes.md` | `tests/test_integration.py`, `tests/test_integrator_cli.py`, `tests/test_mcp_server.py` |
+| `test-agent.agent.md` (Tests) | `tests/`, coverage gate (`scripts/pre_push_hook.py`, `.claude/settings.json`) | `tests/test_common.py`, `tests/test_transaction_validator.py`, `tests/test_fraud_detector.py`, `tests/test_compliance_checker.py`, `tests/test_settlement_processor.py`, `tests/test_reporting_agent.py` |
+| `doc-agent.agent.md` (Docs) | `README.md`, `HOWTORUN.md`, `docs/screenshots/` | n/a (verified by `verify.sh` content checks) |

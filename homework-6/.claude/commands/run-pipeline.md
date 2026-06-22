@@ -4,18 +4,24 @@ description: Run the multi-agent banking pipeline end-to-end and summarise resul
 
 Run the multi-agent banking pipeline end-to-end.
 
-Steps:
+## Steps
 1. Check that `homework-6/sample-transactions.json` exists; abort with a clear
-   message if it does not.
+   message if it does not. **Output:** confirmation + transaction count.
 2. Clear the `homework-6/shared/` directories (input, processing, output,
-   results) so the run starts clean.
+   results) so the run starts clean. **Output:** "shared/ cleared".
 3. Run the pipeline: `cd homework-6 && .venv/bin/python integrator.py`
    (fall back to `python3 integrator.py` if no venv is present).
+   **Output:** the integrator's run log.
 4. Show a summary of results from `homework-6/shared/results/`:
-   - total transactions, and a count by final status (settled / held / rejected)
-   - the settled totals per currency from `shared/results/_summary.txt`
+   total transactions, a count by final status (settled / held / rejected), and
+   the settled totals per currency from `shared/results/_summary.txt`.
+   **Output:** the status counts + per-currency totals.
 5. Report any transactions that were rejected and **why**, and any flagged for
-   fraud review with their risk score.
+   fraud review with their risk score. **Output:** rejected + flagged lists.
 
-Finish by confirming that every transaction id from `sample-transactions.json`
-appears in `shared/results/`.
+## Expected output
+A status summary (counts + per-currency totals), the rejected/flagged lists,
+and a confirmation line that every transaction id appears in `shared/results/`.
+
+**Self-check:** confirm every transaction id from `sample-transactions.json`
+appears in `shared/results/` (none missing).

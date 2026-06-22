@@ -65,6 +65,11 @@ section "TASKS deliverables / structure conformance"
 conformance() { if [[ -e "$1" ]]; then echo "PASS: exists $1"; else echo "FAIL: missing $1"; FAILED=1; fi; }
 conformance "specification.md"
 conformance "agents.md"
+conformance "CLAUDE.md"
+conformance "agents-meta/spec-agent.agent.md"
+conformance "agents-meta/code-agent.agent.md"
+conformance "agents-meta/test-agent.agent.md"
+conformance "agents-meta/doc-agent.agent.md"
 conformance ".claude/commands/write-spec.md"
 conformance ".claude/commands/run-pipeline.md"
 conformance ".claude/commands/validate-transactions.md"
@@ -96,6 +101,17 @@ grep -q "list_pipeline_results" mcp/server.py; check $? "MCP exposes list_pipeli
 grep -q "pipeline://summary" mcp/server.py; check $? "MCP exposes pipeline://summary resource"
 grep -q "High-Level Objective" specification.md; check $? "spec has High-Level Objective"
 grep -q "Low-Level Tasks" specification.md; check $? "spec has Low-Level Tasks"
+grep -q "## Assumptions" specification.md; check $? "spec has Assumptions"
+grep -q "## Traceability" specification.md; check $? "spec has Traceability"
+
+section "Meta-agent definitions (agents-meta/)"
+for f in agents-meta/spec-agent.agent.md agents-meta/code-agent.agent.md \
+         agents-meta/test-agent.agent.md agents-meta/doc-agent.agent.md; do
+  grep -q "^model:" "$f"; check $? "$f has model:"
+  grep -q "YOU MUST" "$f"; check $? "$f has YOU MUST"
+  grep -q "Self-Check" "$f"; check $? "$f has Self-Check"
+  grep -q "REMEMBER" "$f"; check $? "$f has REMEMBER"
+done
 
 printf '\n========================================\n'
 if [[ $FAILED -eq 0 ]]; then

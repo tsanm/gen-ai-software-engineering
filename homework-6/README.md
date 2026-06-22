@@ -92,14 +92,29 @@ transactions (fraud review) short-circuit straight to the reporting agent, so
 | Complexity | radon | enforce no function graded C+ |
 | Automation | Claude Code skills + hook | `/run-pipeline`, push coverage gate |
 
-## Meta-agents → deliverables
+## The four meta-agents
 
-| Meta-agent | Deliverable |
-|---|---|
-| Agent 1 — Specification | `specification.md`, `agents.md`, `/write-spec` skill |
-| Agent 2 — Code generation | `integrator.py`, `agents/*.py`, `research-notes.md` (context7) |
-| Agent 3 — Unit tests | `tests/`, coverage gate hook (blocks push < 80%) |
-| Agent 4 — Documentation | this `README.md`, `HOWTORUN.md` |
+The system is built by four meta-agents, each defined as a proper agent in
+`agents-meta/` (WORK-Agents structure: role, `YOU MUST` / `YOU MUST NOT`,
+process with output schemas, self-check, error handling, mantra):
+
+- [`agents-meta/spec-agent.agent.md`](agents-meta/spec-agent.agent.md) — Specification
+- [`agents-meta/code-agent.agent.md`](agents-meta/code-agent.agent.md) — Code generation
+- [`agents-meta/test-agent.agent.md`](agents-meta/test-agent.agent.md) — Unit tests
+- [`agents-meta/doc-agent.agent.md`](agents-meta/doc-agent.agent.md) — Documentation
+
+## Deliverables → TASKS coverage
+
+| Meta-agent (definition) | TASKS | Deliverables |
+|---|---|---|
+| `agents-meta/spec-agent.agent.md` (Agent 1 — Specification) | Task 1 | `specification.md`, `agents.md`, `CLAUDE.md`, `/write-spec` skill |
+| `agents-meta/code-agent.agent.md` (Agent 2 — Code generation) | Tasks 2, 4 | `integrator.py`, `agents/*.py`, `mcp/server.py`, `mcp.json`, `research-notes.md` (context7) |
+| `agents-meta/test-agent.agent.md` (Agent 3 — Unit tests) | Tasks 3, 5 | `tests/`, `/run-pipeline` + `/validate-transactions` skills, coverage gate hook (blocks push < 80%) |
+| `agents-meta/doc-agent.agent.md` (Agent 4 — Documentation) | Task 5 | this `README.md`, `HOWTORUN.md`, `docs/screenshots/` |
+
+The SSOT docs (`CLAUDE.md` = always-on rules, `specification.md` = what,
+`agents.md` = behaviour) keep all four meta-agents working against one source of
+truth.
 
 ## Quick start
 

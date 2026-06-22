@@ -51,8 +51,11 @@ quality/robustness. Every check is automated (run via `pytest` and/or
 `verify.sh` asserts the presence of every required file and key content
 markers:
 
-- Spec: `specification.md` (High-Level Objective + Low-Level Tasks), `agents.md`,
+- SSOT docs: `specification.md` (High-Level Objective + Low-Level Tasks +
+  `## Assumptions` + `## Traceability`), `agents.md`, `CLAUDE.md`,
   `.claude/commands/write-spec.md`.
+- Meta-agents: `agents-meta/{spec,code,test,doc}-agent.agent.md`, each asserted
+  to contain `model:`, `YOU MUST`, `Self-Check`, and `REMEMBER`.
 - Pipeline: `integrator.py`, `agents/{transaction_validator,fraud_detector,
   compliance_checker,settlement_processor,reporting_agent}.py`, `research-notes.md`.
 - Skills/hooks: `.claude/commands/{run-pipeline,validate-transactions}.md`,
