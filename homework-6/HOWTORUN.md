@@ -75,16 +75,25 @@ In Claude Code, from the repo root:
 The hook in `.claude/settings.json` runs `scripts/pre_push_hook.py` before any
 Bash command and **denies** `git push` if coverage is below 80%.
 
-Demo the deny path (temporarily raise the threshold so it cannot be met):
+Demo the deny path (temporarily raise the threshold so it cannot be met). Keep
+the copy inside `scripts/` so it still finds `coverage_gate.sh`, then remove it:
 
 ```bash
-sed 's/THRESHOLD = 80/THRESHOLD = 100/' scripts/pre_push_hook.py > /tmp/hook100.py
+sed 's/THRESHOLD = 80/THRESHOLD = 100/' scripts/pre_push_hook.py > scripts/_demo_hook_100.py
 echo '{"tool_name":"Bash","tool_input":{"command":"git push origin x"}}' \
-  | python /tmp/hook100.py
-# -> {"hookSpecificOutput": {... "permissionDecision": "deny" ...}}
+  | python scripts/_demo_hook_100.py
+# -> {"hookSpecificOutput": {... "permissionDecision": "deny",
+#     "permissionDecisionReason": "Coverage gate failed (threshold 100%)... 99 < 100 ..."}}
+rm scripts/_demo_hook_100.py
 ```
 
-The real (80%) gate allows the push because coverage is ~99%.
+The real (80%) gate allows the push because coverage is ~99%:
+
+```bash
+echo '{"tool_name":"Bash","tool_input":{"command":"git push origin x"}}' \
+  | python scripts/pre_push_hook.py
+# -> {... "permissionDecision": "allow", "...Reason": "Coverage gate passed (>= 80%)." }
+```
 
 > Screenshot the hook firing → `docs/screenshots/hook-trigger.png`.
 
