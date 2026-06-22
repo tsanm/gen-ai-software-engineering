@@ -16,15 +16,18 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-from agents.common import Message, parse_money
+from agents.common import Message, load_config, parse_money
 
 AGENT_NAME = "compliance_checker"
 
-#: Amount (major units) at/above which a regulatory report flag is raised.
-REPORTING_THRESHOLD = Decimal("10000")
+_COMPLIANCE_CFG = load_config()["compliance"]
 
-#: Demo blocklist of sanctioned/frozen account identifiers.
-BLOCKED_ACCOUNTS = frozenset({"ACC-9999"})
+#: Amount (major units) at/above which a regulatory report flag is raised,
+#: sourced from ``pipeline.config.json``.
+REPORTING_THRESHOLD = Decimal(str(_COMPLIANCE_CFG["reporting_threshold"]))
+
+#: Blocklist of sanctioned/frozen account identifiers, sourced from config.
+BLOCKED_ACCOUNTS = frozenset(_COMPLIANCE_CFG["blocked_accounts"])
 
 
 def check_compliance(record: dict[str, Any]) -> dict[str, Any]:

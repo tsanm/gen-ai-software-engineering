@@ -89,6 +89,7 @@ conformance "README.md"
 conformance "HOWTORUN.md"
 conformance "PLAN.md"
 conformance "TEST_PLAN.md"
+conformance "pipeline.config.json"
 conformance "docs/screenshots/.gitkeep"
 conformance "docs/screenshots/README.md"
 
@@ -103,6 +104,31 @@ grep -q "High-Level Objective" specification.md; check $? "spec has High-Level O
 grep -q "Low-Level Tasks" specification.md; check $? "spec has Low-Level Tasks"
 grep -q "## Assumptions" specification.md; check $? "spec has Assumptions"
 grep -q "## Traceability" specification.md; check $? "spec has Traceability"
+grep -q "Worked Example" specification.md; check $? "spec has Worked Example"
+grep -q "Outcome & Reason Catalog" specification.md; check $? "spec has Outcome & Reason Catalog"
+grep -q "best-practices" README.md; check $? "README has best-practices mapping table"
+
+section "Config-driven pipeline"
+grep -q '"stage_order"' pipeline.config.json; check $? "config defines stage_order"
+grep -q '"reporting_threshold": 10000' pipeline.config.json; check $? "config sets reporting_threshold=10000"
+grep -q '"coverage_floor"' pipeline.config.json; check $? "config sets coverage_floor"
+grep -q "load_config" integrator.py; check $? "integrator reads pipeline.config.json"
+grep -q "load_config" agents/fraud_detector.py; check $? "fraud_detector reads config"
+grep -q "load_config" agents/compliance_checker.py; check $? "compliance_checker reads config"
+grep -q "load_config" agents/settlement_processor.py; check $? "settlement_processor reads config"
+
+section "Immutable per-run capture"
+LATEST_RUN="$(ls -dt shared/runs/run-* 2>/dev/null | head -n 1)"
+if [[ -n "$LATEST_RUN" && -f "$LATEST_RUN/manifest.json" && -f "$LATEST_RUN/audit.log" ]]; then
+  check 0 "shared/runs/<run> has manifest.json + audit.log ($LATEST_RUN)"
+else
+  check 1 "shared/runs/<run> has manifest.json + audit.log"
+fi
+if [[ -n "$LATEST_RUN" ]] && ! grep -q "ACC-" "$LATEST_RUN/audit.log"; then
+  check 0 "run audit.log is PII-safe (no raw account numbers)"
+else
+  check 1 "run audit.log is PII-safe (no raw account numbers)"
+fi
 
 section "Meta-agent definitions (agents-meta/)"
 for f in agents-meta/spec-agent.agent.md agents-meta/code-agent.agent.md \

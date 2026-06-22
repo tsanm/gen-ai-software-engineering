@@ -23,6 +23,8 @@ quality/robustness. Every check is automated (run via `pytest` and/or
 | P0-11 | Result files are valid standard message envelopes | `test_integration::test_message_protocol_shape` |
 | P0-12 | MCP tools `get_transaction_status`, `list_pipeline_results`, resource `pipeline://summary` | `test_mcp_server.py` |
 | P0-13 | Coverage gate blocks push when coverage < 80% | manual + `scripts/pre_push_hook.py` deny-path demo |
+| P0-14 | `pipeline.config.json` present and loadable; thresholds/order/fee read from it (not hardcoded) | `test_config.py`, `verify.sh` content checks |
+| P0-15 | Each run writes an immutable `shared/runs/run-<UTC>/` capture (results + audit.log + manifest.json) | `test_integration::test_run_capture_*`, `verify.sh` |
 
 ## P1 — Security, isolation, robustness
 
@@ -52,8 +54,11 @@ quality/robustness. Every check is automated (run via `pytest` and/or
 markers:
 
 - SSOT docs: `specification.md` (High-Level Objective + Low-Level Tasks +
-  `## Assumptions` + `## Traceability`), `agents.md`, `CLAUDE.md`,
-  `.claude/commands/write-spec.md`.
+  `## Assumptions` + `## Traceability` + Worked Example + Outcome & Reason
+  Catalog), `agents.md`, `CLAUDE.md`, `.claude/commands/write-spec.md`.
+- Config & run capture: `pipeline.config.json` exists and `integrator.py` reads
+  it; a fresh run produces `shared/runs/run-<UTC>/` with `manifest.json` and a
+  PII-safe `audit.log`.
 - Meta-agents: `agents-meta/{spec,code,test,doc}-agent.agent.md`, each asserted
   to contain `model:`, `YOU MUST`, `Self-Check`, and `REMEMBER`.
 - Pipeline: `integrator.py`, `agents/{transaction_validator,fraud_detector,

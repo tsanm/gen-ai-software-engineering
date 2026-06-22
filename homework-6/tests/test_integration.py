@@ -59,6 +59,50 @@ def test_summary_files_written(sample_path: Path, tmp_path: Path) -> None:
     assert (shared / "results" / "_summary.txt").exists()
 
 
+def test_run_capture_is_immutable_and_complete(sample_path: Path, tmp_path: Path) -> None:
+    """Each run writes a timestamped capture with results, audit log + manifest."""
+
+    shared = tmp_path / "shared"
+    summary = run_pipeline(sample_path, shared, configure_audit_logger(tmp_path / "a.log"))
+
+    run_dir = Path(summary["run_dir"])
+    assert run_dir.parent == shared / "runs"
+    assert run_dir.name.startswith("run-")
+
+    manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["run_id"] == run_dir.name
+    assert manifest["config"] == "pipeline.config.json"
+    assert manifest["all_processed"] is True
+
+    expected = {r["transaction_id"] for r in load_transactions(sample_path)}
+    captured = {p.stem for p in (run_dir / "results").glob("*.json") if not p.name.startswith("_")}
+    assert captured == expected
+
+    audit = (run_dir / "audit.log").read_text(encoding="utf-8")
+    assert "ACC-1001" not in audit and "****" in audit
+
+
+def test_run_captures_are_distinct_per_run(sample_path: Path, tmp_path: Path) -> None:
+    """A second run never overwrites the first (immutable evidence trail)."""
+
+    shared = tmp_path / "shared"
+    logger = configure_audit_logger(tmp_path / "a.log")
+    first = run_pipeline(sample_path, shared, logger)
+    # Force a distinct timestamp without sleeping.
+    import integrator as integ
+
+    monkey = "2026-01-01T00-00-00Z"
+    orig = integ._run_stamp
+    integ._run_stamp = lambda: monkey  # type: ignore[assignment]
+    try:
+        second = run_pipeline(sample_path, shared, logger)
+    finally:
+        integ._run_stamp = orig  # type: ignore[assignment]
+
+    assert first["run_dir"] != second["run_dir"]
+    assert len(list((shared / "runs").glob("run-*"))) == 2
+
+
 def test_message_protocol_shape(sample_path: Path, tmp_path: Path) -> None:
     """Every result file must be a valid standard message envelope."""
 

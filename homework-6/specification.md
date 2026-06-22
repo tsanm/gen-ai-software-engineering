@@ -57,6 +57,78 @@ record it under `## Assumptions`). Unknown / malformed input ⇒ **fail closed**
   `shared/{input,processing,output,results}`.
 - Testing: unit tests per agent + an integration test for the full pipeline,
   isolated from the real `shared/` via `tmp_path`. Target coverage ≥ 90%.
+- Configuration: the runtime numbers (agent order, fraud/compliance thresholds,
+  fee rate, currency allow-list, paths, coverage floor) live in
+  `pipeline.config.json`; `integrator.py` and the agents **read** them, so tuning
+  a threshold needs no code change. The values in that file mirror this spec.
+- Run capture: each `integrator.py` run writes an immutable, timestamped folder
+  under `shared/runs/run-<UTC>/` containing the per-transaction results, a
+  PII-safe audit log, the run summary, and a `manifest.json`. `shared/results/`
+  holds the latest run as a convenience pointer.
+
+## 3a. Worked Example (one transaction, end to end)
+
+This traces **TXN001** from the raw record through each agent to its terminal
+result, so the expected behaviour is unambiguous.
+
+**Raw input** (`sample-transactions.json`):
+
+```json
+{ "transaction_id": "TXN001", "timestamp": "2026-03-16T09:00:00Z",
+  "source_account": "ACC-1001", "destination_account": "ACC-2001",
+  "amount": "1500.00", "currency": "USD", "transaction_type": "transfer",
+  "metadata": { "channel": "online", "country": "US" } }
+```
+
+**Message envelope** the integrator seeds into `shared/input/` (standard wire
+format):
+
+```json
+{ "message_id": "<uuid4>", "timestamp": "<iso-8601>",
+  "source_agent": "integrator", "target_agent": "transaction_validator",
+  "message_type": "transaction", "data": { ...the raw record... } }
+```
+
+**Per-agent decisions:**
+
+| Stage | Decision | Key fields added | Next target |
+|---|---|---|---|
+| `transaction_validator` | all 7 required fields present; USD supported; amount `1500.00` non-zero → **validated** (amount normalised to `1500.00`) | `status=validated` | `fraud_detector` |
+| `fraud_detector` | amount < 5,000 (0 pts); 09:00 UTC not off-hours (0); country `US` domestic (0); not a wire (0) → score `0` | `risk_score=0`, `risk_band=low`, `status=passed_fraud` | `compliance_checker` |
+| `compliance_checker` | neither account blocked; amount < 10,000 → no report flag; not fraud-flagged → **approved** | `compliance_decision=approved`, `compliance_flags=[]`, `status=compliance_approved` | `settlement_processor` |
+| `settlement_processor` | fee = `1500.00 × 0.0025` = `3.75`; net = `1500.00 − 3.75` = `1496.25` (Decimal, ROUND_HALF_UP) | `fee=3.75`, `net_amount=1496.25`, `status=settled` | `reporting_agent` |
+| `reporting_agent` | finalise + stamp | `finalized_at`, written to `shared/results/TXN001.json` | terminal |
+
+**Terminal result** (`shared/results/TXN001.json` → `data`): `status=settled`,
+`fee=3.75`, `net_amount=1496.25`. Each hop emits one PII-safe audit line
+(`<iso-8601> agent=<name> txn=TXN001 outcome=<status> detail=src=****01`).
+
+## 3b. Outcome & Reason Catalog (authoritative)
+
+Every transaction reaches exactly one **terminal status**; rejected/held records
+carry a stable, human-readable `reason`. This catalog is the single source of
+truth for those codes — agents must not invent statuses or reasons outside it.
+
+| Terminal `status` | Meaning | Set by | Settles? |
+|---|---|---|---|
+| `settled` | Approved and money math applied (`fee`, `net_amount`) | settlement_processor | yes |
+| `held` | Fraud-flagged; never auto-settles, awaits manual review | compliance_checker | no |
+| `rejected` | Failed validation or compliance; terminal with a `reason` | validator / compliance | no |
+
+| Reason code (`reason`) | When it occurs | Originating agent |
+|---|---|---|
+| `missing required field: <name>` | A required field is absent/empty | transaction_validator |
+| `unsupported currency: <code>` | Currency not in the ISO-4217 allow-list (e.g. `XYZ`) | transaction_validator |
+| `amount must be non-zero` | Parsed amount equals zero | transaction_validator |
+| `negative amount only allowed for refunds` | Negative amount on a non-refund type | transaction_validator |
+| `invalid monetary amount: <value>` | Amount is a `float` or unparseable | transaction_validator |
+| `blocked_account` | Source/destination is on the compliance blocklist | compliance_checker |
+| `fraud_review` | Risk score ≥ review threshold → held (this is a hold reason, not a rejection) | compliance_checker |
+
+**Non-terminal status flags** (set mid-chain, never persisted as a terminal
+outcome): `validated`, `passed_fraud`, `compliance_approved`. **Compliance flag:**
+`regulatory_report_required` is raised (in `compliance_flags`) at amount ≥ the
+reporting threshold; it annotates but does not by itself change the outcome.
 
 ## 4. Context
 

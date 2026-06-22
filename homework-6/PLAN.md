@@ -25,6 +25,12 @@ transaction_validator → fraud_detector → compliance_checker
   target_agent, message_type, data`.
 * **Cross-cutting invariants** live in `agents/common.py`: `Decimal` money with
   `ROUND_HALF_UP`, ISO-4217 currency table, PII masking, audit logging.
+* **Config-driven**: the agent order, fraud/compliance thresholds, fee rate,
+  currency allow-list, paths and coverage floor live in `pipeline.config.json`;
+  `integrator.py` and the agents read them (no hardcoded numbers).
+* **Immutable run capture**: every run writes `shared/runs/run-<UTC>/` with the
+  per-transaction results, a PII-safe audit log, the run summary and a
+  `manifest.json`; `shared/results/` is the latest-run pointer.
 * Rejected/held transactions short-circuit to the reporting agent so **every**
   input transaction reaches a terminal state.
 
@@ -57,7 +63,7 @@ transaction_validator → fraud_detector → compliance_checker
 | 4 | `compliance_checker.py` | blocklist + reporting threshold + hold logic |
 | 5 | `settlement_processor.py` | Decimal fee/net with ROUND_HALF_UP; refunds handled |
 | 6 | `reporting_agent.py` | per-txn finalize + run summary (json+text) |
-| 7 | `integrator.py` | seeds input, runs chain in order, monitors completion |
+| 7 | `integrator.py` | reads `pipeline.config.json`; seeds input, runs chain in order, monitors completion, writes immutable `shared/runs/run-<UTC>/` capture |
 | 8 | `mcp/server.py` | 2 tools + 1 resource; PII-safe; importable for tests |
 | 9 | skills + hook | 3 slash commands; push-gate blocks < 80% |
 | 10 | tests | unit per agent + integration via tmp_path; coverage ≥ 90% |

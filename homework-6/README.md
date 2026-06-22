@@ -116,6 +116,29 @@ The SSOT docs (`CLAUDE.md` = always-on rules, `specification.md` = what,
 `agents.md` = behaviour) keep all four meta-agents working against one source of
 truth.
 
+## Industry / cross-homework best-practices mapping
+
+This capstone consolidates the strongest practices from the earlier homeworks so
+every cross-cutting dimension is covered in one place.
+
+| Best practice | Where it appears here | Lineage |
+|---|---|---|
+| Quality gate (ruff + mypy strict + bandit + radon + coverage) | `verify.sh`, `pyproject.toml` | HW2 |
+| Coverage floor enforced on push | `scripts/pre_push_hook.py` + `coverage_floor` in `pipeline.config.json` | HW2/HW4 |
+| TDD breadth: unit-per-agent + integration via `tmp_path` | `tests/` | HW2 |
+| Convenience run script | `python integrator.py`, `/run-pipeline` skill | HW2 `demo/` |
+| Layered specification (Authority/closed-world, NFR, Implementation Notes, Assumptions) | `specification.md` | HW3 |
+| **Worked Example** (one txn end to end) | `specification.md` §3a | HW3 |
+| **Outcome & Reason Catalog** (stable codes) | `specification.md` §3b | HW3 (Error Code Catalog) |
+| Traceability matrix (agent → deliverable → test) | `specification.md` §Traceability | HW3 |
+| SSOT doc trio (spec / behaviour / always-on rules) | `specification.md`, `agents.md`, `CLAUDE.md` | HW3 |
+| Best-practices mapping table | this table | HW3 |
+| Agent definitions with role/MUST/Self-Check | `agents-meta/*.agent.md` | HW4 (WORK-Agents) |
+| **Config-driven engine** (order, thresholds, paths) | `pipeline.config.json` (read by `integrator.py` + agents) | HW4 |
+| **Immutable timestamped run folders** + per-run audit log + manifest | `shared/runs/run-<UTC>/` (see `capture_run`) | HW4 |
+| `verify.sh` conformance gate + `docs/proofs/` evidence | `verify.sh`, `docs/proofs/` | HW4 |
+| PLAN.md + TEST_PLAN.md with P0/P1 checks | `PLAN.md`, `TEST_PLAN.md` | HW4 |
+
 ## Quick start
 
 ```bash

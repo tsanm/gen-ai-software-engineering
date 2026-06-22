@@ -1,0 +1,20 @@
+=== Pipeline Run Summary ===
+generated_at: 2026-06-22T05:16:38Z
+total_transactions: 8
+
+by_status:
+  held: 1
+  rejected: 2
+  settled: 5
+
+settled_totals_by_currency:
+  EUR: 498.75
+  GBP: -99.75
+  USD: 29625.75
+
+flagged_for_review: 1
+  TXN005 score=60 reasons=high_value>=50000,wire_transfer
+
+rejected: 2
+  TXN003 reason=blocked_account
+  TXN006 reason=unsupported currency: XYZ

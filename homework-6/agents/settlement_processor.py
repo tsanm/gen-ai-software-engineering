@@ -12,12 +12,12 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
-from agents.common import Message, parse_money, quantize_money
+from agents.common import Message, load_config, parse_money, quantize_money
 
 AGENT_NAME = "settlement_processor"
 
-#: Flat proportional settlement fee (0.25%).
-FEE_RATE = Decimal("0.0025")
+#: Flat proportional settlement fee (0.25%), sourced from ``pipeline.config.json``.
+FEE_RATE = Decimal(str(load_config()["settlement"]["fee_rate"]))
 
 
 def settle(record: dict[str, Any]) -> dict[str, Any]:

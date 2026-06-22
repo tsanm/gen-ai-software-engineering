@@ -30,12 +30,14 @@ from pathlib import Path
 from typing import Any
 
 __all__ = [
+    "DEFAULT_CONFIG_PATH",
     "SUPPORTED_CURRENCIES",
     "AgentError",
     "Message",
     "PipelinePaths",
     "configure_audit_logger",
     "iso_now",
+    "load_config",
     "mask_account",
     "mask_text",
     "new_message_id",
@@ -43,27 +45,43 @@ __all__ = [
     "quantize_money",
 ]
 
-# --- ISO 4217 -------------------------------------------------------------
-
-#: Supported ISO 4217 currency codes mapped to their minor-unit exponent
-#: (the number of decimal places the currency uses). ``XYZ`` is intentionally
-#: absent so the validator rejects it.
-SUPPORTED_CURRENCIES: dict[str, int] = {
-    "USD": 2,
-    "EUR": 2,
-    "GBP": 2,
-    "JPY": 0,
-    "CHF": 2,
-    "CAD": 2,
-    "AUD": 2,
-}
-
-
 # --- Errors ---------------------------------------------------------------
 
 
 class AgentError(Exception):
     """Raised when an agent cannot process a message it received."""
+
+
+# --- Config (single source of runtime numbers) ----------------------------
+
+#: Default location of the declarative pipeline config, relative to the repo
+#: root (the parent of this ``agents/`` package).
+DEFAULT_CONFIG_PATH: Path = Path(__file__).resolve().parent.parent / "pipeline.config.json"
+
+
+def load_config(path: Path | None = None) -> dict[str, Any]:
+    """Load the declarative pipeline config (``pipeline.config.json``).
+
+    Thresholds, the fee rate, the currency allow-list, the agent order and the
+    coverage floor all live in this file so behaviour can be tuned without code
+    changes. The agents and the integrator read from the returned mapping; this
+    function is the only place that knows the on-disk shape.
+    """
+
+    config_path = path or DEFAULT_CONFIG_PATH
+    data = json.loads(config_path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        raise AgentError("pipeline.config.json must contain a JSON object")
+    return data
+
+
+# --- ISO 4217 -------------------------------------------------------------
+
+#: Supported ISO 4217 currency codes mapped to their minor-unit exponent
+#: (the number of decimal places the currency uses), sourced from
+#: ``pipeline.config.json`` so the allow-list is config-driven. ``XYZ`` is
+#: intentionally absent so the validator rejects it.
+SUPPORTED_CURRENCIES: dict[str, int] = load_config()["currencies"]
 
 
 # --- Time helpers ---------------------------------------------------------

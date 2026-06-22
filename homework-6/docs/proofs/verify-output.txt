@@ -18,32 +18,33 @@ PASS: bandit (no medium/high)
 PASS: radon (no C+)
 
 === Tests + coverage (>= 90%) ===
-........................................................................ [100%]
+........................................................................ [ 92%]
+......                                                                   [100%]
 ================================ tests coverage ================================
 _______________ coverage: platform darwin, python 3.12.2-final-0 _______________
 
 Name                              Stmts   Miss  Cover   Missing
 ---------------------------------------------------------------
 agents/__init__.py                    3      0   100%
-agents/common.py                     97      0   100%
-agents/compliance_checker.py         33      0   100%
-agents/fraud_detector.py             55      0   100%
+agents/common.py                    104      0   100%
+agents/compliance_checker.py         34      0   100%
+agents/fraud_detector.py             60      0   100%
 agents/reporting_agent.py            56      0   100%
 agents/settlement_processor.py       20      0   100%
 agents/transaction_validator.py      82      0   100%
-integrator.py                        74      2    97%   206-207
+integrator.py                        96      2    98%   270-271
 mcp/server.py                        59      4    93%   26, 118, 124, 130
 ---------------------------------------------------------------
-TOTAL                               479      6    99%
-Required test coverage of 90% reached. Total coverage: 98.75%
-72 passed in 3.36s
+TOTAL                               514      6    99%
+Required test coverage of 90% reached. Total coverage: 98.83%
+78 passed in 4.47s
 PASS: pytest coverage >= 90%
 
 === Pipeline end-to-end ===
-  TXN003 reason=blocked_account
   TXN006 reason=unsupported currency: XYZ
 
-Results written to: /Users/owner/src/gen-ai-software-engineering/.claude/worktrees/agent-adaf06dad3ea82e47/homework-6/shared/results
+Results written to: /Users/owner/src/gen-ai-software-engineering/homework-6/shared/results
+Run captured to:    /Users/owner/src/gen-ai-software-engineering/homework-6/shared/runs/run-2026-06-22T05-17-54Z
 OK: all 8 transactions appear in shared/results/
 PASS: integrator runs to completion
 
@@ -53,6 +54,11 @@ PASS: every transaction id appears in shared/results/
 === TASKS deliverables / structure conformance ===
 PASS: exists specification.md
 PASS: exists agents.md
+PASS: exists CLAUDE.md
+PASS: exists agents-meta/spec-agent.agent.md
+PASS: exists agents-meta/code-agent.agent.md
+PASS: exists agents-meta/test-agent.agent.md
+PASS: exists agents-meta/doc-agent.agent.md
 PASS: exists .claude/commands/write-spec.md
 PASS: exists .claude/commands/run-pipeline.md
 PASS: exists .claude/commands/validate-transactions.md
@@ -72,6 +78,7 @@ PASS: exists README.md
 PASS: exists HOWTORUN.md
 PASS: exists PLAN.md
 PASS: exists TEST_PLAN.md
+PASS: exists pipeline.config.json
 PASS: exists docs/screenshots/.gitkeep
 PASS: exists docs/screenshots/README.md
 
@@ -84,6 +91,42 @@ PASS: MCP exposes list_pipeline_results
 PASS: MCP exposes pipeline://summary resource
 PASS: spec has High-Level Objective
 PASS: spec has Low-Level Tasks
+PASS: spec has Assumptions
+PASS: spec has Traceability
+PASS: spec has Worked Example
+PASS: spec has Outcome & Reason Catalog
+PASS: README has best-practices mapping table
+
+=== Config-driven pipeline ===
+PASS: config defines stage_order
+PASS: config sets reporting_threshold=10000
+PASS: config sets coverage_floor
+PASS: integrator reads pipeline.config.json
+PASS: fraud_detector reads config
+PASS: compliance_checker reads config
+PASS: settlement_processor reads config
+
+=== Immutable per-run capture ===
+PASS: shared/runs/<run> has manifest.json + audit.log (shared/runs/run-2026-06-22T05-17-54Z)
+PASS: run audit.log is PII-safe (no raw account numbers)
+
+=== Meta-agent definitions (agents-meta/) ===
+PASS: agents-meta/spec-agent.agent.md has model:
+PASS: agents-meta/spec-agent.agent.md has YOU MUST
+PASS: agents-meta/spec-agent.agent.md has Self-Check
+PASS: agents-meta/spec-agent.agent.md has REMEMBER
+PASS: agents-meta/code-agent.agent.md has model:
+PASS: agents-meta/code-agent.agent.md has YOU MUST
+PASS: agents-meta/code-agent.agent.md has Self-Check
+PASS: agents-meta/code-agent.agent.md has REMEMBER
+PASS: agents-meta/test-agent.agent.md has model:
+PASS: agents-meta/test-agent.agent.md has YOU MUST
+PASS: agents-meta/test-agent.agent.md has Self-Check
+PASS: agents-meta/test-agent.agent.md has REMEMBER
+PASS: agents-meta/doc-agent.agent.md has model:
+PASS: agents-meta/doc-agent.agent.md has YOU MUST
+PASS: agents-meta/doc-agent.agent.md has Self-Check
+PASS: agents-meta/doc-agent.agent.md has REMEMBER
 
 ========================================
 VERIFY: ALL CHECKS PASSED
