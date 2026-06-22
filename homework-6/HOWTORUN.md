@@ -62,7 +62,9 @@ passes. A captured run is in `docs/proofs/`.
 
 ## 7. Use the Claude Code skills (slash commands)
 
-In Claude Code, from the repo root:
+The slash commands live in `homework-6/.claude/commands/`, so launch Claude
+Code **with `homework-6` as the working directory** (`cd homework-6 && claude`)
+— commands are project-scoped to the directory Claude Code is started in:
 
 - `/write-spec` — (re)generate `specification.md` from the template (Agent 1).
 - `/run-pipeline` — run the pipeline end-to-end and summarise results.
@@ -75,27 +77,23 @@ In Claude Code, from the repo root:
 The hook in `.claude/settings.json` runs `scripts/pre_push_hook.py` before any
 Bash command and **denies** `git push` if coverage is below 80%.
 
-Demo the deny path (temporarily raise the threshold so it cannot be met). Keep
-the copy inside `scripts/` so it still finds `coverage_gate.sh`, then remove it:
+Run the demo, which invokes the *real* hook against a simulated `git push` at
+two thresholds (100% → deny, 80% → allow) and prints a readable result:
 
 ```bash
-sed 's/THRESHOLD = 80/THRESHOLD = 100/' scripts/pre_push_hook.py > scripts/_demo_hook_100.py
-echo '{"tool_name":"Bash","tool_input":{"command":"git push origin x"}}' \
-  | python scripts/_demo_hook_100.py
-# -> {"hookSpecificOutput": {... "permissionDecision": "deny",
-#     "permissionDecisionReason": "Coverage gate failed (threshold 100%)... 99 < 100 ..."}}
-rm scripts/_demo_hook_100.py
+python scripts/demo_hook.py
 ```
 
-The real (80%) gate allows the push because coverage is ~99%:
+Expected (coverage is genuine — nothing mocked):
 
-```bash
-echo '{"tool_name":"Bash","tool_input":{"command":"git push origin x"}}' \
-  | python scripts/pre_push_hook.py
-# -> {... "permissionDecision": "allow", "...Reason": "Coverage gate passed (>= 80%)." }
+```
+  measured total coverage: 99%
+
+  ✖ DENY   demo gate 100%   99% < 100%   → push BLOCKED   (decision=deny)
+  ✔ ALLOW  real gate  80%   99% ≥ 80%    → push PERMITTED (decision=allow)
 ```
 
-> Screenshot the hook firing → `docs/screenshots/hook-trigger.png`.
+> Screenshot this → `docs/screenshots/hook-trigger.png`.
 
 ## 9. Use the MCP servers
 
