@@ -1,0 +1,25 @@
+{
+  "run_id": "run-2026-06-22T05-16-38Z",
+  "generated_at": "2026-06-22T05:16:38Z",
+  "config": "pipeline.config.json",
+  "stage_order": [
+    "transaction_validator",
+    "fraud_detector",
+    "compliance_checker",
+    "settlement_processor",
+    "reporting_agent"
+  ],
+  "total_transactions": 8,
+  "by_status": {
+    "held": 1,
+    "rejected": 2,
+    "settled": 5
+  },
+  "all_processed": true,
+  "artifacts": [
+    "results/",
+    "audit.log",
+    "results/_summary.json",
+    "results/_summary.txt"
+  ]
+}

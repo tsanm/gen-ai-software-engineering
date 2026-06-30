@@ -1,0 +1,48 @@
+{
+  "_comment": "Declarative config for the multi-agent banking pipeline. Edit this file to change agent order, fraud/compliance thresholds, the fee rate, the currency allow-list, paths, and the coverage floor — integrator.py and the agents READ these values, so no code change is needed. Numbers here are authoritative and mirror specification.md.",
+  "version": 1,
+  "stage_order": [
+    "transaction_validator",
+    "fraud_detector",
+    "compliance_checker",
+    "settlement_processor",
+    "reporting_agent"
+  ],
+  "short_circuit_statuses": ["rejected"],
+  "currencies": {
+    "USD": 2,
+    "EUR": 2,
+    "GBP": 2,
+    "JPY": 0,
+    "CHF": 2,
+    "CAD": 2,
+    "AUD": 2
+  },
+  "fraud": {
+    "review_threshold": 50,
+    "medium_threshold": 25,
+    "high_value_bands": [
+      [50000, 50],
+      [10000, 30],
+      [5000, 15]
+    ],
+    "off_hours": { "start_hour": 0, "end_hour": 5, "points": 20 },
+    "cross_border": { "domestic_country": "US", "points": 15 },
+    "wire_transfer": { "points": 10 }
+  },
+  "compliance": {
+    "reporting_threshold": 10000,
+    "blocked_accounts": ["ACC-9999"]
+  },
+  "settlement": {
+    "fee_rate": "0.0025"
+  },
+  "paths": {
+    "shared_root": "shared",
+    "sample_transactions": "sample-transactions.json",
+    "runs_dir": "shared/runs",
+    "results_dir": "shared/results",
+    "audit_log": "shared/audit.log"
+  },
+  "coverage_floor": 80
+}

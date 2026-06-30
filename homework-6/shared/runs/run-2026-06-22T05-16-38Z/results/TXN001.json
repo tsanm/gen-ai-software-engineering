@@ -1,0 +1,31 @@
+{
+  "message_id": "a0d08491-9e8e-4aae-959a-d0a733dd86c5",
+  "timestamp": "2026-06-22T05:16:38Z",
+  "source_agent": "reporting_agent",
+  "target_agent": "results",
+  "message_type": "result",
+  "data": {
+    "transaction_id": "TXN001",
+    "timestamp": "2026-03-16T09:00:00Z",
+    "source_account": "ACC-1001",
+    "destination_account": "ACC-2001",
+    "amount": "1500.00",
+    "currency": "USD",
+    "transaction_type": "transfer",
+    "description": "Monthly rent payment",
+    "metadata": {
+      "channel": "online",
+      "country": "US"
+    },
+    "status": "settled",
+    "risk_score": 0,
+    "risk_band": "low",
+    "risk_reasons": [],
+    "compliance_decision": "approved",
+    "compliance_flags": [],
+    "fee": "3.75",
+    "net_amount": "1496.25",
+    "settlement_status": "settled",
+    "finalized_at": "2026-06-22T05:16:38Z"
+  }
+}

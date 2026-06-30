@@ -1,0 +1,31 @@
+{
+  "message_id": "ac2232b8-a71a-4ff1-9d6b-673e6ef62520",
+  "timestamp": "2026-06-22T05:16:38Z",
+  "source_agent": "reporting_agent",
+  "target_agent": "results",
+  "message_type": "result",
+  "data": {
+    "transaction_id": "TXN003",
+    "timestamp": "2026-03-16T09:30:00Z",
+    "source_account": "ACC-1003",
+    "destination_account": "ACC-9999",
+    "amount": "9999.99",
+    "currency": "USD",
+    "transaction_type": "transfer",
+    "description": "Consulting payment",
+    "metadata": {
+      "channel": "online",
+      "country": "US"
+    },
+    "status": "rejected",
+    "risk_score": 15,
+    "risk_band": "low",
+    "risk_reasons": [
+      "high_value>=5000"
+    ],
+    "compliance_decision": "rejected",
+    "compliance_flags": [],
+    "reason": "blocked_account",
+    "finalized_at": "2026-06-22T05:16:38Z"
+  }
+}

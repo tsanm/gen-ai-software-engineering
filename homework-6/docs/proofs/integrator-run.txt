@@ -1,0 +1,63 @@
+2026-06-22T05:16:38Z agent=integrator txn=* outcome=loaded detail=count=8
+2026-06-22T05:16:38Z agent=transaction_validator txn=TXN001 outcome=validated detail=src=****01
+2026-06-22T05:16:38Z agent=fraud_detector txn=TXN001 outcome=passed_fraud detail=src=****01
+2026-06-22T05:16:38Z agent=compliance_checker txn=TXN001 outcome=compliance_approved detail=src=****01
+2026-06-22T05:16:38Z agent=settlement_processor txn=TXN001 outcome=settled detail=src=****01
+2026-06-22T05:16:38Z agent=reporting_agent txn=TXN001 outcome=settled detail=src=****01
+2026-06-22T05:16:38Z agent=transaction_validator txn=TXN002 outcome=validated detail=src=****02
+2026-06-22T05:16:38Z agent=fraud_detector txn=TXN002 outcome=passed_fraud detail=src=****02
+2026-06-22T05:16:38Z agent=compliance_checker txn=TXN002 outcome=compliance_approved detail=src=****02
+2026-06-22T05:16:38Z agent=settlement_processor txn=TXN002 outcome=settled detail=src=****02
+2026-06-22T05:16:38Z agent=reporting_agent txn=TXN002 outcome=settled detail=src=****02
+2026-06-22T05:16:38Z agent=transaction_validator txn=TXN003 outcome=validated detail=src=****03
+2026-06-22T05:16:38Z agent=fraud_detector txn=TXN003 outcome=passed_fraud detail=src=****03
+2026-06-22T05:16:38Z agent=compliance_checker txn=TXN003 outcome=rejected detail=src=****03
+2026-06-22T05:16:38Z agent=reporting_agent txn=TXN003 outcome=rejected detail=src=****03
+2026-06-22T05:16:38Z agent=transaction_validator txn=TXN004 outcome=validated detail=src=****04
+2026-06-22T05:16:38Z agent=fraud_detector txn=TXN004 outcome=passed_fraud detail=src=****04
+2026-06-22T05:16:38Z agent=compliance_checker txn=TXN004 outcome=compliance_approved detail=src=****04
+2026-06-22T05:16:38Z agent=settlement_processor txn=TXN004 outcome=settled detail=src=****04
+2026-06-22T05:16:38Z agent=reporting_agent txn=TXN004 outcome=settled detail=src=****04
+2026-06-22T05:16:38Z agent=transaction_validator txn=TXN005 outcome=validated detail=src=****05
+2026-06-22T05:16:38Z agent=fraud_detector txn=TXN005 outcome=fraud_review detail=src=****05
+2026-06-22T05:16:38Z agent=compliance_checker txn=TXN005 outcome=held detail=src=****05
+2026-06-22T05:16:38Z agent=settlement_processor txn=TXN005 outcome=held detail=src=****05
+2026-06-22T05:16:38Z agent=reporting_agent txn=TXN005 outcome=held detail=src=****05
+2026-06-22T05:16:38Z agent=transaction_validator txn=TXN006 outcome=rejected detail=src=****06
+2026-06-22T05:16:38Z agent=reporting_agent txn=TXN006 outcome=rejected detail=src=****06
+2026-06-22T05:16:38Z agent=transaction_validator txn=TXN007 outcome=validated detail=src=****07
+2026-06-22T05:16:38Z agent=fraud_detector txn=TXN007 outcome=passed_fraud detail=src=****07
+2026-06-22T05:16:38Z agent=compliance_checker txn=TXN007 outcome=compliance_approved detail=src=****07
+2026-06-22T05:16:38Z agent=settlement_processor txn=TXN007 outcome=settled detail=src=****07
+2026-06-22T05:16:38Z agent=reporting_agent txn=TXN007 outcome=settled detail=src=****07
+2026-06-22T05:16:38Z agent=transaction_validator txn=TXN008 outcome=validated detail=src=****08
+2026-06-22T05:16:38Z agent=fraud_detector txn=TXN008 outcome=passed_fraud detail=src=****08
+2026-06-22T05:16:38Z agent=compliance_checker txn=TXN008 outcome=compliance_approved detail=src=****08
+2026-06-22T05:16:38Z agent=settlement_processor txn=TXN008 outcome=settled detail=src=****08
+2026-06-22T05:16:38Z agent=reporting_agent txn=TXN008 outcome=settled detail=src=****08
+2026-06-22T05:16:38Z agent=integrator txn=* outcome=complete detail=processed=8 missing=[]
+2026-06-22T05:16:38Z agent=integrator txn=* outcome=captured detail=run=run-2026-06-22T05-16-38Z
+=== Pipeline Run Summary ===
+generated_at: 2026-06-22T05:16:38Z
+total_transactions: 8
+
+by_status:
+  held: 1
+  rejected: 2
+  settled: 5
+
+settled_totals_by_currency:
+  EUR: 498.75
+  GBP: -99.75
+  USD: 29625.75
+
+flagged_for_review: 1
+  TXN005 score=60 reasons=high_value>=50000,wire_transfer
+
+rejected: 2
+  TXN003 reason=blocked_account
+  TXN006 reason=unsupported currency: XYZ
+
+Results written to: /Users/owner/src/gen-ai-software-engineering/homework-6/shared/results
+Run captured to:    /Users/owner/src/gen-ai-software-engineering/homework-6/shared/runs/run-2026-06-22T05-16-38Z
+OK: all 8 transactions appear in shared/results/
