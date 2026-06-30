@@ -1,0 +1,34 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Fixes applied</title>
+<style>
+ body{background:#0d1117;color:#e6edf3;margin:26px;font-family:-apple-system,Segoe UI,sans-serif}
+ h1{font-size:18px;margin:0 0 4px} .sub{color:#8b949e;font-size:13px;margin-bottom:16px}
+ .fix{border:1px solid #30363d;border-radius:9px;margin-bottom:12px;overflow:hidden}
+ .hdr{background:#161b22;color:#e6edf3;font-size:13px;font-weight:700;padding:7px 12px}
+ .hdr .tag{color:#8b949e;font-weight:400}
+ pre{margin:0;font:12.5px/1.6 ui-monospace,Menlo,monospace} span{display:block;padding:2px 12px}
+ .del{color:#f85149;background:#3a1417} .add{color:#56d364;background:#0f2a16} .ctx{color:#8b949e}
+ .ok{margin-top:14px;background:#0f2a16;color:#56d364;border:1px solid #1f7a33;border-radius:9px;padding:11px 14px;font-weight:700;font-size:14px}
+</style></head><body>
+<h1>🔧 Fixes applied by the pipeline — seeded <code>08dfb7f</code> → fixed <code>HEAD</code></h1>
+<div class="sub">bug-fixer stage (Sonnet, Editor) executing the approved implementation plan</div>
+
+<div class="fix"><div class="hdr">BUG-A &nbsp;<span class="tag">transactions.py · is_within_daily_limit() · boundary</span></div><pre>
+<span class="del">- return spent + amount &lt;  limit      # spend exactly at limit wrongly REJECTED</span>
+<span class="add">+ return spent + amount &lt;= limit      # inclusive upper bound</span></pre></div>
+
+<div class="fix"><div class="hdr">BUG-B &nbsp;<span class="tag">transactions.py · average_transaction() · empty input</span></div><pre>
+<span class="add">+ if not amounts:</span>
+<span class="add">+     return 0.0                       # empty no longer raises ZeroDivisionError</span>
+<span class="ctx">  return sum(amounts) / len(amounts)</span></pre></div>
+
+<div class="fix"><div class="hdr">VULN-1 &nbsp;<span class="tag">report.py · export_report() · command injection (HIGH)</span></div><pre>
+<span class="del">- return subprocess.call(f"cat {path} &gt; report.txt", shell=True)</span>
+<span class="add">+ with open(path,"rb") as s, open("report.txt","wb") as d:</span>
+<span class="add">+     shutil.copyfileobj(s, d)         # no shell → injection impossible</span></pre></div>
+
+<div class="fix"><div class="hdr">VULN-2 &nbsp;<span class="tag">report.py · API_KEY · hardcoded secret (MEDIUM)</span></div><pre>
+<span class="del">- API_KEY = "sk-live-DEMO0000000000000000000000"</span>
+<span class="add">+ API_KEY = os.environ.get("PAYCLI_API_KEY", "")   # read from environment</span></pre></div>
+
+<div class="ok">✔ 26 tests pass · coverage 100% · bandit clean · ruff / mypy / radon green</div>
+</body></html>

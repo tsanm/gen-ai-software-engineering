@@ -1,0 +1,59 @@
+== Engineering quality gate ==
+  PASS  ruff clean
+  PASS  mypy clean
+  PASS  radon: no C-or-worse
+  PASS  bandit: no HIGH/CRITICAL
+  PASS  pytest green, coverage >=90% on src/paycli
+== Canonical artifacts (9) ==
+  PASS  artifact research/codebase-research.md
+  PASS  artifact research/verified-research.md
+  PASS  artifact rca.md
+  PASS  artifact verified-rca.md
+  PASS  artifact implementation-plan.md
+  PASS  artifact fix-summary.md
+  PASS  artifact security-report.md
+  PASS  artifact test-report.md
+  PASS  artifact bug-context.md
+== Run capture ==
+  PASS  run folder exists
+  PASS  manifest.json present
+  PASS  CHECKPOINT-1 recorded
+  PASS  CHECKPOINT-2 recorded
+  PASS  8 stages have log+result
+  PASS  handoff in stage results
+== Fix correctness (post-fix source) ==
+  PASS  BUG-A fixed (<= used, no strict < limit)
+  PASS  BUG-B fixed (empty guard)
+  PASS  VULN-1 fixed (no shell=True)
+  PASS  VULN-2 fixed (no sk- literal)
+== Agents / skills (frontmatter + Architect/Editor) ==
+  PASS  agents+skills valid
+== Docs ==
+  PASS  README has author
+  PASS  HOWTORUN present
+  PASS  screenshots dir present
+== TASKS.md Expected Project Structure & Deliverables (pre-merge conformance) ==
+  PASS  agents/research-verifier.agent.md
+  PASS  agents/bug-fixer.agent.md
+  PASS  agents/security-verifier.agent.md
+  PASS  agents/unit-test-generator.agent.md
+  PASS  skills/research-quality-measurement.md
+  PASS  skills/unit-tests-FIRST.md
+  PASS  context: bug-context.md
+  PASS  context: research/codebase-research.md
+  PASS  context: research/verified-research.md
+  PASS  context: implementation-plan.md
+  PASS  context: fix-summary.md
+  PASS  context: security-report.md
+  PASS  context: test-report.md
+  PASS  app source: src/paycli
+  PASS  tests/ present
+  PASS  docs/screenshots/ present
+  PASS  README.md present
+  PASS  HOWTORUN.md present
+  FAIL  screenshot pipeline-run.png
+  FAIL  screenshot fixes-applied.png
+  FAIL  screenshot security-scan.png
+  FAIL  screenshot unit-tests.png
+
+RESULT: 46 passed, 4 failed.

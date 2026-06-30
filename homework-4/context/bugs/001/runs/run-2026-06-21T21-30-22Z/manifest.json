@@ -1,0 +1,10 @@
+{
+  "run_id": "run-2026-06-21T21-30-22Z",
+  "git": "d5ccbb3",
+  "config": "pipeline.config.json",
+  "started": "2026-06-21T21-30-22Z",
+  "ended": "2026-06-21T21:44:18Z",
+  "status": "completed",
+  "perm_mode": "acceptEdits",
+  "stages": [ {"step":"00","agent":"bug-researcher"}, {"step":"01","agent":"research-verifier"}, {"step":"02","agent":"rca-analyst"}, {"step":"03","agent":"rca-verifier"}, {"step":"05","agent":"bug-planner"}, {"step":"07","agent":"bug-fixer"}, {"step":"08","agent":"security-verifier"}, {"step":"09","agent":"unit-test-generator"}]
+}

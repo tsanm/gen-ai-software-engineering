@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Unit tests & coverage</title>
+<style>
+ body{background:#0d1117;color:#e6edf3;margin:26px;font-family:-apple-system,Segoe UI,sans-serif}
+ h1{font-size:18px;margin:0 0 4px} .sub{color:#8b949e;font-size:13px;margin-bottom:16px}
+ .banner{background:#0f2a16;color:#56d364;border:1px solid #1f7a33;border-radius:10px;padding:14px 18px;font-size:20px;font-weight:700;margin-bottom:18px}
+ table{border-collapse:collapse;font-size:13px} td,th{border:1px solid #30363d;padding:6px 12px;text-align:left}
+ th{color:#8b949e} .ok{color:#3fb950;font-weight:600} tr.tot td{font-weight:700;background:#161b22}
+ h2{font-size:14px;margin:20px 0 6px;color:#e6edf3} ul{font-size:13px;line-height:1.8;margin:0;padding-left:18px}
+ code{background:#161b22;padding:1px 5px;border-radius:4px} a{color:#58a6ff}
+</style></head><body>
+ <h1>🧪 Unit tests &amp; coverage — paycli</h1>
+ <div class="sub">author baseline + CLI tests &nbsp;·&nbsp; pipeline-generated FIRST tests (changed code only)</div>
+ <div class="banner">✅ 26 passed in 0.25s &nbsp;·&nbsp; coverage 100%</div>
+ <table><tr><th>file</th><th>stmts</th><th>miss</th><th>cover</th></tr><tr><td><code>src/paycli/__init__.py</code></td><td>1</td><td>0</td><td class=ok>100%</td></tr><tr><td><code>src/paycli/cli.py</code></td><td>27</td><td>0</td><td class=ok>100%</td></tr><tr><td><code>src/paycli/report.py</code></td><td>11</td><td>0</td><td class=ok>100%</td></tr><tr><td><code>src/paycli/transactions.py</code></td><td>10</td><td>0</td><td class=ok>100%</td></tr><tr class=tot><td>TOTAL</td><td>49</td><td>0</td><td class=ok>100%</td></tr></table>
+ <h2>Test files</h2><ul></ul>
+ <h2>Pipeline-generated FIRST tests (changed code only)</h2>
+ <ul><li><b>BUG-A</b> boundary: spend == limit allowed, +1 rejected</li>
+     <li><b>BUG-B</b>: empty input returns 0 (no exception)</li>
+     <li><b>VULN-1</b>: injection payload <b>not executed</b> (no side-effect file)</li></ul>
+ <div class="sub" style="margin-top:14px">full HTML coverage report: <a href="../htmlcov/index.html">htmlcov/index.html</a></div>
+</body></html>

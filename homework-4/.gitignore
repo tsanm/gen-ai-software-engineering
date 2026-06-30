@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+report.txt
+pwned.txt
+.claude/
+
+# keep the pipeline transcript (overrides a global *.log ignore)
+!context/bugs/001/runs/*/pipeline-run.log

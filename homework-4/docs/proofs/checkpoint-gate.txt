@@ -1,0 +1,25 @@
+### Case 1: human APPROVES (pipe 'y')
+
+CHECKPOINT 1 — review: verified-rca.md
+Q: Root cause correct?
+--- CHECKPOINT 1: APPROVED
+  -> continued past gate (exit 0)
+# Checkpoint 1
+
+- Reviewed: `verified-rca.md`
+- Question: Root cause correct?
+- Decision: **APPROVED**
+
+### Case 2: human REJECTS (pipe 'n')
+
+CHECKPOINT 2 — review: implementation-plan.md
+Q: Plan correct?
+--- CHECKPOINT 2: REJECTED
+Checkpoint 2 rejected — stopping.
+[finalize status=rejected:cp2]
+  -> pipeline STOPPED with exit 3
+# Checkpoint 2
+
+- Reviewed: `implementation-plan.md`
+- Question: Plan correct?
+- Decision: **REJECTED**
